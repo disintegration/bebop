@@ -1,4 +1,4 @@
-body { padding-top: 55px; font-family: Arial, sans-serif; color: #222; }
+body { padding-top: 55px; font-family: Arial, Helvetica, sans-serif; color: #222; }
 a { color: #375eab; }
 h1 { margin: 12px 5px; font-size: 2.4rem; color: #333; }
 h2 { margin: 11px 5px; font-size: 2.2rem; color: #333; }
@@ -68,13 +68,13 @@ pre {
     word-break: normal;
     overflow-x: auto;
     font-size: 1.3rem;
-    font-family: Menlo, monospace;
+    font-family: Consolas, Menlo, monospace;
 }
 code, pre code {
     color: #333;
     background-color: #f5f6f7; 
     font-size: 1.3rem;
-    font-family: Menlo, monospace;
+    font-family: Consolas, Menlo, monospace;
     white-space: pre;
 }
 
