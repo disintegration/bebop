@@ -4,12 +4,12 @@ Vue.component('bebop-nav', {
 		<nav class="navbar navbar-default navbar-fixed-top">
 			<div class="container">
 				<div class="navbar-header pull-left">
-					<a class="navbar-brand" href="#">
+					<router-link to="/" class="navbar-brand">
 						<span class="navbar-title">
 							<i class="fa fa-comments"></i>
 							{{ config.title }}
 						</span>
-					</a>
+					</router-link>
 				</div>
 				<div class="navbar-header pull-right">
 					<ul class="nav pull-left">
