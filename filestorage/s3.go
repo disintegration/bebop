@@ -12,8 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
-// TODO: The following code is completely untested, but should be.
-
 // AmazonS3 is an Amazon S3 file storage.
 type AmazonS3 struct {
 	region string
@@ -43,8 +41,8 @@ func NewAmazonS3(accessKey, secretKey, region, bucket string) (*AmazonS3, error)
 // Save saves data from r to file with the given path.
 func (s *AmazonS3) Save(path string, r io.Reader) error {
 	var body io.ReadSeeker
-	if r, ok := r.(io.ReadSeeker); ok {
-		body = r
+	if rs, ok := r.(io.ReadSeeker); ok {
+		body = rs
 	} else {
 		buf, err := ioutil.ReadAll(r)
 		if err != nil {
@@ -82,5 +80,5 @@ func (s *AmazonS3) Remove(path string) error {
 
 // URL returns an URL of the file with the given path.
 func (s *AmazonS3) URL(path string) string {
-	return fmt.Sprintf("https://%s.s3-website-%s.amazonaws.com/%s", s.bucket, s.region, path)
+	return fmt.Sprintf("https://%s.s3.amazonaws.com/%s", s.bucket, path)
 }
