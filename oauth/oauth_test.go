@@ -19,7 +19,7 @@ func TestOAuthBegin(t *testing.T) {
 		CookiePath: "/forum/",
 	})
 	handler.providers = map[string]*provider{
-		"testprovider": &provider{
+		"testprovider": {
 			config: &oauth2.Config{
 				ClientID:     "test-client-id",
 				ClientSecret: "test-client-secret",

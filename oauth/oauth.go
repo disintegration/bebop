@@ -3,13 +3,13 @@
 package oauth
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"runtime"
 	"strings"
 	"time"
-	"context"
 
 	"github.com/pressly/chi"
 	"github.com/satori/go.uuid"
