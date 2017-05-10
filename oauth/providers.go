@@ -2,8 +2,9 @@ package oauth
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
-	"net/url"
 	"strconv"
 
 	"golang.org/x/oauth2"
@@ -14,13 +15,13 @@ import (
 
 type provider struct {
 	config  *oauth2.Config
-	getUser func(c *http.Client, token string) (*user, error)
+	getUser func(*http.Client) (*user, error)
 }
 
 type providerConfig struct {
 	endpoint oauth2.Endpoint
 	scopes   []string
-	getUser  func(c *http.Client, token string) (*user, error)
+	getUser  func(*http.Client) (*user, error)
 }
 
 type user struct {
@@ -46,8 +47,8 @@ var providerConfigs = map[string]providerConfig{
 	},
 }
 
-func getGoogleUser(c *http.Client, token string) (*user, error) {
-	url := "https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + url.QueryEscape(token)
+func getGoogleUser(c *http.Client) (*user, error) {
+	url := "https://www.googleapis.com/oauth2/v2/userinfo"
 
 	u := struct {
 		ID   string `json:"id"`
@@ -62,8 +63,8 @@ func getGoogleUser(c *http.Client, token string) (*user, error) {
 	return &user{id: u.ID, name: u.Name}, nil
 }
 
-func getFacebookUser(c *http.Client, token string) (*user, error) {
-	url := "https://graph.facebook.com/me?fields=id,name&access_token=" + url.QueryEscape(token)
+func getFacebookUser(c *http.Client) (*user, error) {
+	url := "https://graph.facebook.com/me?fields=id,name"
 
 	u := struct {
 		ID   string `json:"id"`
@@ -78,8 +79,8 @@ func getFacebookUser(c *http.Client, token string) (*user, error) {
 	return &user{id: u.ID, name: u.Name}, nil
 }
 
-func getGithubUser(c *http.Client, token string) (*user, error) {
-	url := "https://api.github.com/user?access_token=" + url.QueryEscape(token)
+func getGithubUser(c *http.Client) (*user, error) {
+	url := "https://api.github.com/user"
 
 	u := struct {
 		ID   int64  `json:"id"`
@@ -97,8 +98,18 @@ func getGithubUser(c *http.Client, token string) (*user, error) {
 func getJSON(c *http.Client, url string, v interface{}) error {
 	response, err := c.Get(url)
 	if err != nil {
-		return err
+		return fmt.Errorf("request failed: %v", err)
 	}
 	defer response.Body.Close()
-	return json.NewDecoder(response.Body).Decode(v)
+
+	if response.StatusCode < 200 || response.StatusCode > 299 {
+		return fmt.Errorf("bad request status code: %v", response.StatusCode)
+	}
+
+	err = json.NewDecoder(io.LimitReader(response.Body, 1<<20)).Decode(v)
+	if err != nil {
+		return fmt.Errorf("failed to decode JSON response: %v", err)
+	}
+
+	return nil
 }

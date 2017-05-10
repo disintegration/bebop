@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 	"time"
+	"context"
 
 	"github.com/pressly/chi"
 	"github.com/satori/go.uuid"
@@ -19,8 +20,9 @@ import (
 )
 
 const (
-	stateCookie  = "bebop_oauth_state"
-	resultCookie = "bebop_oauth_result"
+	stateCookie   = "bebop_oauth_state"
+	resultCookie  = "bebop_oauth_result"
+	clientTimeout = 10 * time.Second
 )
 
 // Config is a configuration of an OAuth handler.
@@ -35,7 +37,6 @@ type Config struct {
 // Handler handles oauth2 authentication requests.
 type Handler struct {
 	*Config
-	client    *http.Client
 	providers map[string]*provider
 	router    chi.Router
 }
@@ -44,7 +45,6 @@ type Handler struct {
 func New(config *Config) *Handler {
 	h := &Handler{Config: config}
 
-	h.client = &http.Client{Timeout: 10 * time.Second}
 	h.providers = make(map[string]*provider)
 
 	h.router = chi.NewRouter()
@@ -93,7 +93,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleBegin(w http.ResponseWriter, r *http.Request) {
 	providerName := chi.URLParam(r, "provider")
-
 	provider, ok := h.providers[providerName]
 	if !ok {
 		http.NotFound(w, r)
@@ -117,7 +116,6 @@ func (h *Handler) handleBegin(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleEnd(w http.ResponseWriter, r *http.Request) {
 	providerName := chi.URLParam(r, "provider")
-
 	provider, ok := h.providers[providerName]
 	if !ok {
 		http.NotFound(w, r)
@@ -156,18 +154,20 @@ func (h *Handler) handleEnd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := provider.config.Exchange(oauth2.NoContext, queryCode)
+	ctx, cancel := context.WithTimeout(r.Context(), clientTimeout)
+	defer cancel()
+
+	token, err := provider.config.Exchange(ctx, queryCode)
 	if err != nil {
 		h.handleError(w, "exchange failed: %s", err)
 		return
 	}
-
 	if !token.Valid() {
 		h.handleError(w, "invalid token")
 		return
 	}
 
-	u, err := provider.getUser(h.client, token.AccessToken)
+	u, err := provider.getUser(provider.config.Client(ctx, token))
 	if err != nil {
 		h.handleError(w, "get provider user: %s", err)
 		return
