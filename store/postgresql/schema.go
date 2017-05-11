@@ -1,4 +1,4 @@
-package postgres
+package postgresql
 
 var migrate = []string{
 	`

@@ -1,4 +1,4 @@
-package postgres
+package postgresql
 
 import (
 	"reflect"

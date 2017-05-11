@@ -1,4 +1,4 @@
-package postgres
+package postgresql
 
 import "testing"
 
@@ -13,20 +13,20 @@ func getTestStore(t *testing.T) (*Store, func()) {
 	s, err := Connect(testAddress, testUsername, testPassword, testDatabase)
 	if err != nil {
 		t.Fatalf(
-			"failed to connect to the test postgres database: address=%q, username=%q, password=%q, database=%q: %s",
+			"failed to connect to the test postgresql database: address=%q, username=%q, password=%q, database=%q: %s",
 			testAddress, testUsername, testPassword, testDatabase, err,
 		)
 	}
 
 	err = s.Reset()
 	if err != nil {
-		t.Fatalf("failed to reset the test postgres database: %s", err)
+		t.Fatalf("failed to reset the test postgresql database: %s", err)
 	}
 
 	teardown := func() {
 		err = s.Drop()
 		if err != nil {
-			t.Fatalf("failed to drop tables of the test postgres database: %s", err)
+			t.Fatalf("failed to drop tables of the test postgresql database: %s", err)
 		}
 	}
 

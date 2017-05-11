@@ -1,5 +1,5 @@
-// Package postgres provides a PostgreSQL implementation of the bebop data store interface.
-package postgres
+// Package postgresql provides a PostgreSQL implementation of the bebop data store interface.
+package postgresql
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 	"github.com/disintegration/bebop/store"
 )
 
-// Store is a postgres implementation of store.
+// Store is a postgresql implementation of store.
 type Store struct {
 	db           *sql.DB
 	userStore    *userStore
