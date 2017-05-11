@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"image/color/palette"
-	"image/draw"
 	"image/gif"
 	"image/jpeg"
 	"image/png"
@@ -187,43 +185,23 @@ func (s *service) prepareAndSaveGIF(imageData []byte) (string, error) {
 	}
 
 	if gifImg.Config.Width != avatarSize || gifImg.Config.Height != avatarSize {
-		useNearestResize := true
-		if useNearestResize {
-			// This resizing method uses the nearest-neighbor resampling (no antialiasing).
-			// It does not restore the full image for each frame. The benefit is that
-			// the original palette can be used for each image. Also it seems to work fine
-			// for animated gifs with transparent areas. Needs more testing.
-			copier := gift.New()
-			resizer := gift.New(gift.ResizeToFill(avatarSize, avatarSize, gift.NearestNeighborResampling, gift.CenterAnchor))
-			frame := image.NewRGBA(image.Rect(0, 0, gifImg.Config.Width, gifImg.Config.Height))
-			for i, img := range gifImg.Image {
-				if i > 0 {
-					for j := range frame.Pix {
-						frame.Pix[j] = 0
-					}
+		// This resizing method uses the nearest-neighbor resampling (no antialiasing).
+		// It does not restore the full image for each frame. The benefit is that
+		// the original palette can be used for each image. Also it seems to work fine
+		// for animated gifs with transparent areas. Needs more testing.
+		copier := gift.New()
+		resizer := gift.New(gift.ResizeToFill(avatarSize, avatarSize, gift.NearestNeighborResampling, gift.CenterAnchor))
+		frame := image.NewRGBA(image.Rect(0, 0, gifImg.Config.Width, gifImg.Config.Height))
+		for i, img := range gifImg.Image {
+			if i > 0 {
+				for j := range frame.Pix {
+					frame.Pix[j] = 0
 				}
-				copier.DrawAt(frame, img, img.Bounds().Min, gift.CopyOperator)
-				dstFrame := image.NewPaletted(image.Rect(0, 0, avatarSize, avatarSize), img.Palette)
-				resizer.Draw(dstFrame, frame)
-				gifImg.Image[i] = dstFrame
 			}
-		} else {
-			// The alternative resizing method. It restores the full image for each frame
-			// by drawing the current image over the previous. In this case we can use a
-			// higher-quality resampling. But at the same time using a global palette
-			// + FloydSteinberg drawer often leads to less-accurate colors.
-			// Needs more tweaking / testing as well.
-			copier := gift.New()
-			resizer := gift.New(gift.ResizeToFill(avatarSize, avatarSize, gift.CubicResampling, gift.CenterAnchor))
-			frame := image.NewRGBA(image.Rect(0, 0, gifImg.Config.Width, gifImg.Config.Height))
-			resizedFrame := image.NewRGBA(image.Rect(0, 0, avatarSize, avatarSize))
-			for i, img := range gifImg.Image {
-				copier.DrawAt(frame, img, img.Bounds().Min, gift.OverOperator)
-				resizer.Draw(resizedFrame, frame)
-				dstFrame := image.NewPaletted(image.Rect(0, 0, avatarSize, avatarSize), palette.Plan9)
-				draw.FloydSteinberg.Draw(dstFrame, dstFrame.Bounds(), resizedFrame, image.ZP)
-				gifImg.Image[i] = dstFrame
-			}
+			copier.DrawAt(frame, img, img.Bounds().Min, gift.CopyOperator)
+			dstFrame := image.NewPaletted(image.Rect(0, 0, avatarSize, avatarSize), img.Palette)
+			resizer.Draw(dstFrame, frame)
+			gifImg.Image[i] = dstFrame
 		}
 		gifImg.Config.Width = avatarSize
 		gifImg.Config.Height = avatarSize
