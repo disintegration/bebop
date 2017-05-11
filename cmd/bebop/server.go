@@ -118,8 +118,10 @@ func newIndexHandler(cfg *config.Config) (http.HandlerFunc, error) {
 		OAuth: []string{},
 	}
 
-	for providerName := range cfg.OAuth {
-		appConfig.OAuth = append(appConfig.OAuth, providerName)
+	for providerName, provider := range cfg.OAuth {
+		if provider.ClientID != "" && provider.Secret != "" {
+			appConfig.OAuth = append(appConfig.OAuth, providerName)
+		}
 	}
 	sort.Strings(appConfig.OAuth)
 
