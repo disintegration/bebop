@@ -1,0 +1,193 @@
+hash: 945d6f905409e49ad871be741198c35f0f4dc955be0f43ce45115d4da2d16779
+updated: 2017-05-08T09:05:27.896370133Z
+imports:
+- name: cloud.google.com/go
+  version: f96f9416f20012d9164d6d476a1d6063c0a92926
+  subpackages:
+  - compute/metadata
+  - iam
+  - internal
+  - internal/optional
+  - internal/version
+  - storage
+- name: github.com/aws/aws-sdk-go
+  version: a5b389b7b05c59adf7ac44f50d0d8be6e0c85710
+  subpackages:
+  - aws
+  - aws/awserr
+  - aws/awsutil
+  - aws/client
+  - aws/client/metadata
+  - aws/corehandlers
+  - aws/credentials
+  - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/credentials/stscreds
+  - aws/defaults
+  - aws/ec2metadata
+  - aws/endpoints
+  - aws/request
+  - aws/session
+  - aws/signer/v4
+  - private/protocol
+  - private/protocol/query
+  - private/protocol/query/queryutil
+  - private/protocol/rest
+  - private/protocol/restxml
+  - private/protocol/xml/xmlutil
+  - service/s3
+  - service/sts
+- name: github.com/disintegration/bebop
+  version: f18241636c7e69d9a9741887acd38d55cf89b959
+  subpackages:
+  - api
+  - avatar
+  - config
+  - filestorage
+  - jwt
+  - oauth
+  - static
+  - store
+  - store/mock
+  - store/mysql
+  - store/postgres
+- name: github.com/disintegration/gift
+  version: 7230b78288726ee18f3b4d38b52201510cd92d50
+- name: github.com/disintegration/letteravatar
+  version: 1a457b860450eb157f092fdc511993cfa621cc37
+- name: github.com/go-ini/ini
+  version: e7fea39b01aea8d5671f6858f0532f56e8bff3a5
+- name: github.com/go-sql-driver/mysql
+  version: ae5a66df4d33ba404d639bd0fc9189cd5ee79bcf
+- name: github.com/golang/freetype
+  version: bcfeb16b74e8aea9e2fe043406f2ef74b1cb0759
+  subpackages:
+  - raster
+  - truetype
+- name: github.com/golang/protobuf
+  version: 18c9bb3261723cd5401db4d0c9fbc5c3b6c70fe8
+  subpackages:
+  - proto
+  - protoc-gen-go/descriptor
+  - ptypes/any
+- name: github.com/googleapis/gax-go
+  version: 9af46dd5a1713e8b5cd71106287eba3cefdde50b
+- name: github.com/hashicorp/hcl
+  version: a4b07c25de5ff55ad3b8936cea69a79a3d95a855
+  subpackages:
+  - hcl/ast
+  - hcl/parser
+  - hcl/scanner
+  - hcl/strconv
+  - hcl/token
+  - json/parser
+  - json/scanner
+  - json/token
+- name: github.com/jmespath/go-jmespath
+  version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
+- name: github.com/lib/pq
+  version: 2704adc878c21e1329f46f6e56a1c387d788ff94
+  subpackages:
+  - oid
+- name: github.com/pressly/chi
+  version: a57b1fbe2989382bdef31d3793d4a50a0e4a1d7c
+  subpackages:
+  - middleware
+- name: github.com/rwcarlsen/goexif
+  version: 709fab3d192d7c62f86043caff1e7e3fb0f42bd8
+  subpackages:
+  - exif
+  - tiff
+- name: github.com/satori/go.uuid
+  version: 5bf94b69c6b68ee1b541973bb8e1144db23a194b
+- name: golang.org/x/image
+  version: f483456c9f61fd7c1e170033d58ef22ff5ffe291
+  subpackages:
+  - bmp
+  - font
+  - math/fixed
+  - riff
+  - tiff
+  - tiff/lzw
+  - vp8
+  - vp8l
+  - webp
+- name: golang.org/x/net
+  version: feeb485667d1fdabe727840fe00adc22431bc86e
+  subpackages:
+  - context
+  - context/ctxhttp
+  - http2
+  - http2/hpack
+  - idna
+  - internal/timeseries
+  - lex/httplex
+  - trace
+- name: golang.org/x/oauth2
+  version: e7a48207996f497ea86f5736d08d99d45c0b6461
+  subpackages:
+  - facebook
+  - github
+  - google
+  - internal
+  - jws
+  - jwt
+- name: golang.org/x/text
+  version: 470f45bf29f4147d6fbd7dfd0a02a848e49f5bf4
+  subpackages:
+  - secure/bidirule
+  - transform
+  - unicode/bidi
+  - unicode/norm
+- name: google.golang.org/api
+  version: 855cf877ae3202e012c45d0e3b4b152c075a2c27
+  subpackages:
+  - gensupport
+  - googleapi
+  - googleapi/internal/uritemplates
+  - googleapi/transport
+  - internal
+  - iterator
+  - option
+  - storage/v1
+  - transport
+- name: google.golang.org/appengine
+  version: 170382fa85b10b94728989dfcf6cc818b335c952
+  subpackages:
+  - internal
+  - internal/app_identity
+  - internal/base
+  - internal/datastore
+  - internal/log
+  - internal/modules
+  - internal/remote_api
+  - internal/socket
+  - internal/urlfetch
+  - socket
+  - urlfetch
+- name: google.golang.org/genproto
+  version: 411e09b969b1170a9f0c467558eb4c4c110d9c77
+  subpackages:
+  - googleapis/api/annotations
+  - googleapis/iam/v1
+  - googleapis/rpc/status
+- name: google.golang.org/grpc
+  version: ffa4ec7da24e8f4ee690d9aad2afad973e721d7b
+  subpackages:
+  - codes
+  - credentials
+  - credentials/oauth
+  - grpclb/grpc_lb_v1
+  - grpclog
+  - internal
+  - keepalive
+  - metadata
+  - naming
+  - peer
+  - stats
+  - status
+  - tap
+  - transport
+- name: gopkg.in/dgrijalva/jwt-go.v3
+  version: d2709f9f1f31ebcda9651b03077758c1f3a0018c
+testImports: []

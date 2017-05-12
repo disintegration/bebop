@@ -1,0 +1,49 @@
+package: .
+import:
+- package: cloud.google.com/go
+  subpackages:
+  - storage
+- package: github.com/aws/aws-sdk-go
+  subpackages:
+  - aws
+  - aws/credentials
+  - aws/session
+  - service/s3
+- package: github.com/disintegration/bebop
+  subpackages:
+  - api
+  - avatar
+  - config
+  - filestorage
+  - jwt
+  - oauth
+  - static
+  - store
+  - store/mysql
+  - store/postgres
+- package: github.com/disintegration/gift
+- package: github.com/disintegration/letteravatar
+- package: github.com/go-sql-driver/mysql
+- package: github.com/hashicorp/hcl
+- package: github.com/lib/pq
+- package: github.com/pressly/chi
+  subpackages:
+  - middleware
+- package: github.com/rwcarlsen/goexif
+  subpackages:
+  - exif
+- package: github.com/satori/go.uuid
+- package: golang.org/x/image
+  subpackages:
+  - bmp
+  - tiff
+  - webp
+- package: golang.org/x/oauth2
+  subpackages:
+  - facebook
+  - github
+  - google
+- package: google.golang.org/api
+  subpackages:
+  - option
+- package: gopkg.in/dgrijalva/jwt-go.v3
