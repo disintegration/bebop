@@ -55,6 +55,7 @@ func (s *AmazonS3) Save(path string, r io.Reader) error {
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(path),
 		Body:   body,
+		ACL:    aws.String(s3.ObjectCannedACLPublicRead),
 	}
 
 	if _, err := s.svc.PutObject(params); err != nil {
