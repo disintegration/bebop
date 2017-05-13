@@ -214,14 +214,12 @@ func (h *Handler) handleSetUserName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.Store.Users().GetByName(*req.Name)
-	if err == nil {
-		h.renderError(w, http.StatusConflict, "UnavailableUserName", "Username is already taken")
-		return
-	}
-
 	err = h.Store.Users().SetName(id, *req.Name)
 	if err != nil {
+		if err == store.ErrConflict {
+			h.renderError(w, http.StatusConflict, "UnavailableUserName", "Username is already taken")
+			return
+		}
 		h.logError("set user name: %s", err)
 		h.renderError(w, http.StatusInternalServerError, "ServerError", "Server error")
 		return

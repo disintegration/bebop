@@ -143,9 +143,12 @@ func (s *userStore) GetByAuth(authService string, authID string) (*store.User, e
 	return s.scanUser(row)
 }
 
-// SetName updates user.Name value.
+// SetName updates user.Name value. It returns ErrConflict if the given name is already taken.
 func (s *userStore) SetName(id int64, name string) error {
 	_, err := s.db.Exec(`update users set name=? where id=?`, name, id)
+	if isUniqueConstraintError(err) {
+		return store.ErrConflict
+	}
 	return err
 }
 

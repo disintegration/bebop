@@ -116,8 +116,8 @@ func TestUser(t *testing.T) {
 	}
 
 	err = s.Users().SetName(user2.ID, "USER1")
-	if err == nil {
-		t.Fatalf("expected error on duplicate user name")
+	if err != store.ErrConflict {
+		t.Fatalf("expected error ErrConflict on duplicate user name, got: %v", err)
 	}
 
 	users, err := s.Users().GetMany([]int64{user.ID, user2.ID})

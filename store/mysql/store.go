@@ -6,7 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 
 	"github.com/disintegration/bebop/store"
 )
@@ -112,4 +112,11 @@ func placeholders(count int) string {
 		}
 	}
 	return buf.String()
+}
+
+func isUniqueConstraintError(err error) bool {
+	if err, ok := err.(*mysql.MySQLError); ok && err.Number == 1062 {
+		return true
+	}
+	return false
 }

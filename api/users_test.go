@@ -460,15 +460,12 @@ func TestHandleSetUserName(t *testing.T) {
 					}
 					return nil, store.ErrNotFound
 				},
-				OnGetByName: func(name string) (*store.User, error) {
-					if name == "Unavailavle" {
-						return &store.User{}, nil
-					}
-					return nil, store.ErrNotFound
-				},
 				OnSetName: func(id int64, name string) error {
 					if id != 1 && id != 2 {
 						return store.ErrNotFound
+					}
+					if name == "Unavailable" {
+						return store.ErrConflict
 					}
 					if name == "TestError" {
 						return errors.New("TestError")
@@ -548,7 +545,7 @@ func TestHandleSetUserName(t *testing.T) {
 			desc:     "admin token, unavailable user name",
 			id:       "1",
 			token:    token2,
-			body:     `{"name":"Unavailavle"}`,
+			body:     `{"name":"Unavailable"}`,
 			wantCode: http.StatusConflict,
 			wantBody: `{"error":{"code":"UnavailableUserName","message":"Username is already taken"}}`,
 		},

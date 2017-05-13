@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strconv"
 
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 
 	"github.com/disintegration/bebop/store"
 )
@@ -114,4 +114,11 @@ func placeholders(start, count int) string {
 		}
 	}
 	return buf.String()
+}
+
+func isUniqueConstraintError(err error) bool {
+	if err, ok := err.(*pq.Error); ok && err.Code == "23505" {
+		return true
+	}
+	return false
 }

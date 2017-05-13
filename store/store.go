@@ -5,8 +5,12 @@ import (
 	"errors"
 )
 
-// ErrNotFound means the requested item is not found.
-var ErrNotFound = errors.New("store: item(s) not found")
+var (
+	// ErrNotFound means the requested item is not found.
+	ErrNotFound = errors.New("store: item not found")
+	// ErrConflict means the operation failed because of a conflict between items.
+	ErrConflict = errors.New("store: item conflict")
+)
 
 // Store is a bebop data store interface.
 type Store interface {
