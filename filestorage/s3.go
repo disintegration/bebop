@@ -14,7 +14,6 @@ import (
 
 // AmazonS3 is an Amazon S3 file storage.
 type AmazonS3 struct {
-	region string
 	bucket string
 	svc    *s3.S3
 }
@@ -30,7 +29,6 @@ func NewAmazonS3(accessKey, secretKey, region, bucket string) (*AmazonS3, error)
 	}
 
 	s := &AmazonS3{
-		region: region,
 		bucket: bucket,
 		svc:    s3.New(sess),
 	}
