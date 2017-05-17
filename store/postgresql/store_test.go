@@ -10,7 +10,7 @@ const (
 )
 
 func getTestStore(t *testing.T) (*Store, func()) {
-	s, err := Connect(testAddress, testUsername, testPassword, testDatabase)
+	s, err := Connect(testAddress, testUsername, testPassword, testDatabase, "disable", "")
 	if err != nil {
 		t.Fatalf(
 			"failed to connect to the test postgresql database: address=%q, username=%q, password=%q, database=%q: %s",

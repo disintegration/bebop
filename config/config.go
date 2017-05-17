@@ -57,10 +57,12 @@ type Config struct {
 		} `hcl:"mysql"`
 
 		PostgreSQL struct {
-			Address  string `hcl:"address"`
-			Username string `hcl:"username"`
-			Password string `hcl:"password"`
-			Database string `hcl:"database"`
+			Address     string `hcl:"address"`
+			Username    string `hcl:"username"`
+			Password    string `hcl:"password"`
+			Database    string `hcl:"database"`
+			SSLMode     string `hcl:"sslmode"`
+			SSLRootCert string `hcl:"sslrootcert"`
 		} `hcl:"postgresql"`
 	} `hcl:"store"`
 
@@ -158,6 +160,7 @@ store {
     username = ""
     password = ""
     database = ""
+    sslmode  = "disable"
   }
 
   mysql {

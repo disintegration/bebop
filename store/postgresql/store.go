@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"strconv"
 
 	"github.com/lib/pq"
@@ -38,11 +39,15 @@ func (s *Store) Comments() store.CommentStore {
 var _ store.Store = (*Store)(nil)
 
 // Connect connects to a store.
-func Connect(address, username, password, database string) (*Store, error) {
+func Connect(address, username, password, database, sslmode, sslrootcert string) (*Store, error) {
 	connstr := fmt.Sprintf(
-		"postgres://%s:%s@%s/%s?sslmode=disable",
-		username, password, address, database,
+		"postgres://%s:%s@%s/%s?sslmode=%s",
+		username, password, address, database, sslmode,
 	)
+
+	if sslrootcert != "" {
+		connstr += "&sslrootcert=" + url.QueryEscape(sslrootcert)
+	}
 
 	db, err := sql.Open("postgres", connstr)
 	if err != nil {

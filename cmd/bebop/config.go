@@ -77,6 +77,8 @@ func getStore(cfg *config.Config) (store.Store, error) {
 			cfg.Store.PostgreSQL.Username,
 			cfg.Store.PostgreSQL.Password,
 			cfg.Store.PostgreSQL.Database,
+			cfg.Store.PostgreSQL.SSLMode,
+			cfg.Store.PostgreSQL.SSLRootCert,
 		)
 	}
 	return nil, fmt.Errorf("unknown store type: %s", cfg.Store.Type)
