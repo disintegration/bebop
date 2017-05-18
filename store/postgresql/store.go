@@ -41,7 +41,7 @@ var _ store.Store = (*Store)(nil)
 // Connect connects to a store.
 func Connect(address, username, password, database, sslmode, sslrootcert string) (*Store, error) {
 	connstr := fmt.Sprintf(
-		"postgres://%s:%s@%s/%s?sslmode=%s",
+		"postgres://%s:%s@%s/%s?sslmode=%s&connect_timeout=10",
 		username, password, address, database, sslmode,
 	)
 
