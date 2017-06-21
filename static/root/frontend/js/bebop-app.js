@@ -35,7 +35,10 @@ var BebopApp = new Vue({
 
   data: function() {
     return {
-      config: appConfig,
+      config: {
+        title: "",
+        oauth: [],
+      },
       auth: {
         authenticated: false,
         user: {},
@@ -44,10 +47,25 @@ var BebopApp = new Vue({
   },
 
   mounted: function() {
+    this.getConfig()
     this.checkAuth();
   },
 
   methods: {
+    getConfig: function() {
+      this.$http.get("config").then(
+        response => {
+          this.config = response.body;
+          if (this.config.title) {
+            document.title = this.config.title;
+          }
+        },
+        response => {
+          console.log("ERROR: getConfig: " + response.status);
+        }
+      );
+    },
+
     signIn: function(provider) {
       window.open("oauth/begin/" + provider, "", "width=800,height=600");
     },
