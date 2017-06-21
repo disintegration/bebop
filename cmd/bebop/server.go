@@ -95,7 +95,7 @@ func startServer() {
 		router.Mount("/static", static.Dir("/static", cfg.FileStorage.Local.Dir))
 	}
 
-	router.Get("/config", configHandler)
+	router.Get("/config.json", configHandler)
 	router.Get("/", static.EmbeddedFile("/frontend/app.html").ServeHTTP)
 
 	log.Printf("starting the server: %s", cfg.Address)

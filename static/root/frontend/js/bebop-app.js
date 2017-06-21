@@ -53,7 +53,7 @@ var BebopApp = new Vue({
 
   methods: {
     getConfig: function() {
-      this.$http.get("config").then(
+      this.$http.get("config.json").then(
         response => {
           this.config = response.body;
           if (this.config.title) {
