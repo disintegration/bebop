@@ -23,9 +23,9 @@ import (
 
 // startServer configures and starts the bebop web server.
 func startServer() {
-	cfg, err := config.ReadFile(configFile)
+	cfg, err := getConfig()
 	if err != nil {
-		log.Fatalf("failed to load configuration file: %s", err)
+		log.Fatalf("failed to load configuration: %s", err)
 	}
 
 	logger := log.New(os.Stdout, "", log.LstdFlags|log.LUTC)
@@ -67,16 +67,12 @@ func startServer() {
 		CookiePath: baseURL.Path + "/",
 	})
 
-	for providerName, provider := range cfg.OAuth {
-		if provider.ClientID != "" && provider.Secret != "" {
-			err := oauthHandler.AddProvider(providerName, provider.ClientID, provider.Secret)
-			if err != nil {
-				log.Fatalf("failed to init oauth provider (%s): %s", providerName, err)
-			}
-		}
+	oauthProviders, err := initOAuthProviders(cfg, oauthHandler)
+	if err != nil {
+		log.Fatalf("failed to init oauth providers: %s", err)
 	}
 
-	configHandler, err := newConfigHandler(cfg)
+	configHandler, err := newConfigHandler(cfg.Title, oauthProviders)
 	if err != nil {
 		log.Fatalf("failed to create config handler: %s", err)
 	}
@@ -105,20 +101,45 @@ func startServer() {
 	}
 }
 
-func newConfigHandler(cfg *config.Config) (http.HandlerFunc, error) {
+func initOAuthProviders(cfg *config.Config, h *oauth.Handler) ([]string, error) {
+	var providers []string
+
+	if cfg.OAuth.Google.ClientID != "" && cfg.OAuth.Google.Secret != "" {
+		err := h.AddProvider("google", cfg.OAuth.Google.ClientID, cfg.OAuth.Google.Secret)
+		if err != nil {
+			return nil, fmt.Errorf("failed to init google oauth provider: %s", err)
+		}
+		providers = append(providers, "google")
+	}
+
+	if cfg.OAuth.Facebook.ClientID != "" && cfg.OAuth.Facebook.Secret != "" {
+		err := h.AddProvider("facebook", cfg.OAuth.Facebook.ClientID, cfg.OAuth.Facebook.Secret)
+		if err != nil {
+			return nil, fmt.Errorf("failed to init facebook oauth provider: %s", err)
+		}
+		providers = append(providers, "facebook")
+	}
+
+	if cfg.OAuth.Github.ClientID != "" && cfg.OAuth.Github.Secret != "" {
+		err := h.AddProvider("github", cfg.OAuth.Github.ClientID, cfg.OAuth.Github.Secret)
+		if err != nil {
+			return nil, fmt.Errorf("failed to init github oauth provider: %s", err)
+		}
+		providers = append(providers, "github")
+	}
+
+	return providers, nil
+}
+
+func newConfigHandler(title string, oauthProviders []string) (http.HandlerFunc, error) {
 	appConfig := struct {
 		Title string   `json:"title"`
 		OAuth []string `json:"oauth"`
 	}{
-		Title: cfg.Title,
-		OAuth: []string{},
+		Title: title,
+		OAuth: oauthProviders,
 	}
 
-	for providerName, provider := range cfg.OAuth {
-		if provider.ClientID != "" && provider.Secret != "" {
-			appConfig.OAuth = append(appConfig.OAuth, providerName)
-		}
-	}
 	sort.Strings(appConfig.OAuth)
 
 	jsonData, err := json.Marshal(appConfig)

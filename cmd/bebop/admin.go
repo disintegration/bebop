@@ -1,18 +1,18 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 
-	"github.com/disintegration/bebop/config"
 	"github.com/disintegration/bebop/store"
 )
 
 // printAdmins prints all the administrator users.
 func printAdmins() {
-	cfg, err := config.ReadFile(configFile)
+	cfg, err := getConfig()
 	if err != nil {
-		log.Fatalf("failed to load the configuration file: %s", err)
+		log.Fatalf("failed to load configuration: %s", err)
 	}
 
 	s, err := getStore(cfg)
@@ -41,15 +41,15 @@ func removeAdmin() {
 }
 
 func setAdmin(isAdmin bool) {
-	if len(os.Args) < 3 {
-		printUsage()
+	if len(flag.Args()) < 2 {
+		help()
 		os.Exit(2)
 	}
-	username := os.Args[2]
+	username := flag.Arg(1)
 
-	cfg, err := config.ReadFile(configFile)
+	cfg, err := getConfig()
 	if err != nil {
-		log.Fatalf("failed to load the configuration file: %s", err)
+		log.Fatalf("failed to load configuration: %s", err)
 	}
 
 	s, err := getStore(cfg)

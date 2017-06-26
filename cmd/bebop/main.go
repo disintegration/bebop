@@ -3,17 +3,18 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"os"
 )
 
+var useEnvConfig = flag.Bool("e", false, "use environment variables as config")
+
 func main() {
 	log.SetFlags(0)
-
-	if len(os.Args) < 2 {
-		printUsage()
-		os.Exit(2)
-	}
+	flag.Usage = help
+	flag.Parse()
 
 	cmds := map[string]func(){
 		"start":        startServer,
@@ -22,24 +23,27 @@ func main() {
 		"admins":       printAdmins,
 		"add-admin":    addAdmin,
 		"remove-admin": removeAdmin,
-		"help":         printUsage,
+		"help":         help,
 	}
 
-	if cmdFunc, ok := cmds[os.Args[1]]; ok {
+	if cmdFunc, ok := cmds[flag.Arg(0)]; ok {
 		cmdFunc()
 	} else {
-		printUsage()
+		help()
 		os.Exit(2)
 	}
 }
 
-func printUsage() {
-	log.Println(`usage:
+func help() {
+	fmt.Fprintln(os.Stderr, `Usage:
 	bebop start                      - start the server
 	bebop init                       - create an initial configuration file
 	bebop gen-key                    - generate a random 32-byte hex-encoded key
 	bebop admins                     - show the admin list
 	bebop add-admin <username>       - add a user to the admin list
 	bebop remove-admin <username>    - remove a user from the admin list
-	bebop help                       - show this message`)
+	bebop help                       - show this message
+Use -e flag to read configuration from environment variables instead of a file. E.g.:
+	bebop -e start
+	bebop -e admins`)
 }

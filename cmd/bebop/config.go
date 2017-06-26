@@ -34,6 +34,16 @@ func initConfig() {
 	}
 }
 
+// getConfig loads configuration from environment variables or from file.
+func getConfig() (cfg *config.Config, err error) {
+	if *useEnvConfig {
+		cfg, err = config.ReadEnv()
+	} else {
+		cfg, err = config.ReadFile(configFile)
+	}
+	return cfg, err
+}
+
 // genKey generates a random 32-byte hex-encoded key.
 func genKey() {
 	log.Printf("key: %s", config.GenKeyHex(32))
