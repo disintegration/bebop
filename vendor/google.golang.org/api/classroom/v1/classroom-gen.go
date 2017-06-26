@@ -68,6 +68,16 @@ const (
 	// classes you teach or administer
 	ClassroomCourseworkStudentsReadonlyScope = "https://www.googleapis.com/auth/classroom.coursework.students.readonly"
 
+	// View your Google Classroom guardians
+	ClassroomGuardianlinksMeReadonlyScope = "https://www.googleapis.com/auth/classroom.guardianlinks.me.readonly"
+
+	// View and manage guardians for students in your Google Classroom
+	// classes
+	ClassroomGuardianlinksStudentsScope = "https://www.googleapis.com/auth/classroom.guardianlinks.students"
+
+	// View guardians for students in your Google Classroom classes
+	ClassroomGuardianlinksStudentsReadonlyScope = "https://www.googleapis.com/auth/classroom.guardianlinks.students.readonly"
+
 	// View the email addresses of people in your classes
 	ClassroomProfileEmailsScope = "https://www.googleapis.com/auth/classroom.profile.emails"
 
@@ -345,6 +355,14 @@ type Course struct {
 	//
 	// Read-only.
 	AlternateLink string `json:"alternateLink,omitempty"`
+
+	// CalendarId: The Calendar ID for a calendar that all course members
+	// can see, to which
+	// Classroom adds events for course work and announcements in the
+	// course.
+	//
+	// Read-only.
+	CalendarId string `json:"calendarId,omitempty"`
 
 	// CourseGroupEmail: The email address of a Google group containing all
 	// members of the course.
@@ -756,6 +774,10 @@ type CourseWork struct {
 	// not be
 	// set otherwise.
 	MultipleChoiceQuestion *MultipleChoiceQuestion `json:"multipleChoiceQuestion,omitempty"`
+
+	// ScheduledTime: Optional timestamp when this course work is scheduled
+	// to be published.
+	ScheduledTime string `json:"scheduledTime,omitempty"`
 
 	// State: Status of this course work.
 	// If unspecified, the default state is `DRAFT`.
@@ -2229,6 +2251,12 @@ type UserProfile struct {
 	//
 	// Read-only.
 	PhotoUrl string `json:"photoUrl,omitempty"`
+
+	// VerifiedTeacher: Whether or not the user is a verified
+	// teacher
+	//
+	// Read-only
+	VerifiedTeacher bool `json:"verifiedTeacher,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
@@ -8525,7 +8553,10 @@ func (c *UserProfilesGuardianInvitationsCreateCall) Do(opts ...googleapi.CallOpt
 	//   },
 	//   "response": {
 	//     "$ref": "GuardianInvitation"
-	//   }
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/classroom.guardianlinks.students"
+	//   ]
 	// }
 
 }
@@ -8689,7 +8720,11 @@ func (c *UserProfilesGuardianInvitationsGetCall) Do(opts ...googleapi.CallOption
 	//   "path": "v1/userProfiles/{studentId}/guardianInvitations/{invitationId}",
 	//   "response": {
 	//     "$ref": "GuardianInvitation"
-	//   }
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/classroom.guardianlinks.students",
+	//     "https://www.googleapis.com/auth/classroom.guardianlinks.students.readonly"
+	//   ]
 	// }
 
 }
@@ -8921,7 +8956,11 @@ func (c *UserProfilesGuardianInvitationsListCall) Do(opts ...googleapi.CallOptio
 	//   "path": "v1/userProfiles/{studentId}/guardianInvitations",
 	//   "response": {
 	//     "$ref": "ListGuardianInvitationsResponse"
-	//   }
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/classroom.guardianlinks.students",
+	//     "https://www.googleapis.com/auth/classroom.guardianlinks.students.readonly"
+	//   ]
 	// }
 
 }
@@ -9131,7 +9170,10 @@ func (c *UserProfilesGuardianInvitationsPatchCall) Do(opts ...googleapi.CallOpti
 	//   },
 	//   "response": {
 	//     "$ref": "GuardianInvitation"
-	//   }
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/classroom.guardianlinks.students"
+	//   ]
 	// }
 
 }
@@ -9286,7 +9328,10 @@ func (c *UserProfilesGuardiansDeleteCall) Do(opts ...googleapi.CallOption) (*Emp
 	//   "path": "v1/userProfiles/{studentId}/guardians/{guardianId}",
 	//   "response": {
 	//     "$ref": "Empty"
-	//   }
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/classroom.guardianlinks.students"
+	//   ]
 	// }
 
 }
@@ -9452,7 +9497,12 @@ func (c *UserProfilesGuardiansGetCall) Do(opts ...googleapi.CallOption) (*Guardi
 	//   "path": "v1/userProfiles/{studentId}/guardians/{guardianId}",
 	//   "response": {
 	//     "$ref": "Guardian"
-	//   }
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/classroom.guardianlinks.me.readonly",
+	//     "https://www.googleapis.com/auth/classroom.guardianlinks.students",
+	//     "https://www.googleapis.com/auth/classroom.guardianlinks.students.readonly"
+	//   ]
 	// }
 
 }
@@ -9667,7 +9717,12 @@ func (c *UserProfilesGuardiansListCall) Do(opts ...googleapi.CallOption) (*ListG
 	//   "path": "v1/userProfiles/{studentId}/guardians",
 	//   "response": {
 	//     "$ref": "ListGuardiansResponse"
-	//   }
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/classroom.guardianlinks.me.readonly",
+	//     "https://www.googleapis.com/auth/classroom.guardianlinks.students",
+	//     "https://www.googleapis.com/auth/classroom.guardianlinks.students.readonly"
+	//   ]
 	// }
 
 }

@@ -33,8 +33,8 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var _ Retryer = &boRetryer{}
@@ -68,7 +68,7 @@ func TestBackoffExponential(t *testing.T) {
 
 func TestOnCodes(t *testing.T) {
 	// Lint errors grpc.Errorf in 1.6. It mistakenly expects the first arg to Errorf to be a string.
-	errf := grpc.Errorf
+	errf := status.Errorf
 	apiErr := errf(codes.Unavailable, "")
 	tests := []struct {
 		c     []codes.Code
@@ -82,7 +82,7 @@ func TestOnCodes(t *testing.T) {
 	for _, tst := range tests {
 		b := OnCodes(tst.c, Backoff{})
 		if _, retry := b.Retry(apiErr); retry != tst.retry {
-			t.Errorf("retriable codes: %v, error code: %s, retry: %t, want %t", tst.c, grpc.Code(apiErr), retry, tst.retry)
+			t.Errorf("retriable codes: %v, error: %s, retry: %t, want %t", tst.c, apiErr, retry, tst.retry)
 		}
 	}
 }

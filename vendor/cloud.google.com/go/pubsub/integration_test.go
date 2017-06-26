@@ -20,10 +20,14 @@ import (
 	"testing"
 	"time"
 
+	gax "github.com/googleapis/gax-go"
+
 	"golang.org/x/net/context"
 
 	"cloud.google.com/go/iam"
+	"cloud.google.com/go/internal"
 	"cloud.google.com/go/internal/testutil"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
@@ -44,6 +48,7 @@ func extractMessageData(m *Message) *messageData {
 }
 
 func TestAll(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("Integration tests skipped in short mode")
 	}
@@ -67,9 +72,10 @@ func TestAll(t *testing.T) {
 	if topic, err = client.CreateTopic(ctx, topicName); err != nil {
 		t.Errorf("CreateTopic error: %v", err)
 	}
+	defer topic.Stop()
 
 	var sub *Subscription
-	if sub, err = client.CreateSubscription(ctx, subName, topic, 0, nil); err != nil {
+	if sub, err = client.CreateSubscription(ctx, subName, SubscriptionConfig{Topic: topic}); err != nil {
 		t.Errorf("CreateSub error: %v", err)
 	}
 
@@ -100,60 +106,43 @@ func TestAll(t *testing.T) {
 		})
 	}
 
-	ids, err := topic.Publish(ctx, msgs...)
-	if err != nil {
-		t.Fatalf("Publish (1) error: %v", err)
+	// Publish the messages.
+	type pubResult struct {
+		m *Message
+		r *PublishResult
 	}
-
-	if len(ids) != len(msgs) {
-		t.Errorf("unexpected number of message IDs received; %d, want %d", len(ids), len(msgs))
+	var rs []pubResult
+	for _, m := range msgs {
+		r := topic.Publish(ctx, m)
+		rs = append(rs, pubResult{m, r})
 	}
-
 	want := make(map[string]*messageData)
-	for i, m := range msgs {
-		md := extractMessageData(m)
-		md.ID = ids[i]
+	for _, res := range rs {
+		id, err := res.r.Get(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		md := extractMessageData(res.m)
+		md.ID = id
 		want[md.ID] = md
 	}
 
 	// Use a timeout to ensure that Pull does not block indefinitely if there are unexpectedly few messages available.
 	timeoutCtx, _ := context.WithTimeout(ctx, time.Minute)
-	it, err := sub.Pull(timeoutCtx)
+	gotMsgs, err := pullN(timeoutCtx, sub, len(want), func(ctx context.Context, m *Message) {
+		m.Ack()
+	})
 	if err != nil {
-		t.Fatalf("error constructing iterator: %v", err)
+		t.Fatalf("Pull: %v", err)
 	}
-	defer it.Stop()
 	got := make(map[string]*messageData)
-	for i := 0; i < len(want); i++ {
-		m, err := it.Next()
-		if err != nil {
-			t.Fatalf("error getting next message: %v", err)
-		}
+	for _, m := range gotMsgs {
 		md := extractMessageData(m)
 		got[md.ID] = md
-		m.Done(true)
 	}
-
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("messages: got: %v ; want: %v", got, want)
 	}
-
-	// base64 test
-	data := "=@~"
-	_, err = topic.Publish(ctx, &Message{Data: []byte(data)})
-	if err != nil {
-		t.Fatalf("Publish error: %v", err)
-	}
-
-	m, err := it.Next()
-	if err != nil {
-		t.Fatalf("Pull error: %v", err)
-	}
-
-	if string(m.Data) != data {
-		t.Errorf("unexpected message received; %s, want %s", string(m.Data), data)
-	}
-	m.Done(true)
 
 	if msg, ok := testIAM(ctx, topic.IAM(), "pubsub.topics.get"); !ok {
 		t.Errorf("topic IAM: %s", msg)
@@ -162,13 +151,61 @@ func TestAll(t *testing.T) {
 		t.Errorf("sub IAM: %s", msg)
 	}
 
-	err = sub.Delete(ctx)
+	snap, err := sub.createSnapshot(ctx, "")
 	if err != nil {
+		t.Fatalf("CreateSnapshot error: %v", err)
+	}
+
+	timeoutCtx, _ = context.WithTimeout(ctx, time.Minute)
+	err = internal.Retry(timeoutCtx, gax.Backoff{}, func() (bool, error) {
+		snapIt := client.snapshots(timeoutCtx)
+		for {
+			s, err := snapIt.Next()
+			if err == nil && s.name == snap.name {
+				return true, nil
+			}
+			if err == iterator.Done {
+				return false, fmt.Errorf("cannot find snapshot: %q", snap.name)
+			}
+			if err != nil {
+				return false, err
+			}
+		}
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = internal.Retry(timeoutCtx, gax.Backoff{}, func() (bool, error) {
+		err := sub.seekToSnapshot(timeoutCtx, snap.snapshot)
+		return err == nil, err
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = internal.Retry(timeoutCtx, gax.Backoff{}, func() (bool, error) {
+		err := sub.seekToTime(timeoutCtx, time.Now())
+		return err == nil, err
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = internal.Retry(timeoutCtx, gax.Backoff{}, func() (bool, error) {
+		snapHandle := client.snapshot(snap.ID())
+		err := snapHandle.delete(timeoutCtx)
+		return err == nil, err
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	if err := sub.Delete(ctx); err != nil {
 		t.Errorf("DeleteSub error: %v", err)
 	}
 
-	err = topic.Delete(ctx)
-	if err != nil {
+	if err := topic.Delete(ctx); err != nil {
 		t.Errorf("DeleteTopic error: %v", err)
 	}
 }

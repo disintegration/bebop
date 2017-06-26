@@ -1172,6 +1172,7 @@ type Address struct {
 	// to EXTERNAL.
 	//
 	// Possible values:
+	//   "DNS_FORWARDING"
 	//   "EXTERNAL"
 	//   "INTERNAL"
 	//   "UNSPECIFIED_TYPE"
@@ -2120,9 +2121,11 @@ type AutoscalerStatusDetails struct {
 	//   "MISSING_LOAD_BALANCING_DATA_POINTS"
 	//   "MORE_THAN_ONE_BACKEND_SERVICE"
 	//   "NOT_ENOUGH_QUOTA_AVAILABLE"
+	//   "REGION_RESOURCE_STOCKOUT"
 	//   "SCALING_TARGET_DOES_NOT_EXIST"
 	//   "UNKNOWN"
 	//   "UNSUPPORTED_MAX_RATE_LOAD_BALANCING_CONFIGURATION"
+	//   "ZONE_RESOURCE_STOCKOUT"
 	Type string `json:"type,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Message") to
@@ -3461,6 +3464,8 @@ type Binding struct {
 	// * `group:{emailid}`: An email address that represents a Google group.
 	// For example, `admins@example.com`.
 	//
+	//
+	//
 	// * `domain:{domain}`: A Google Apps domain name that represents all
 	// the users of that domain. For example, `google.com` or `example.com`.
 	Members []string `json:"members,omitempty"`
@@ -3575,10 +3580,16 @@ func (s *CacheKeyPolicy) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
-// Commitment: A usage-commitment with a start / end time. Users create
-// commitments for particular resources (e.g. memory). Actual usage is
-// first deducted from available commitments made prior, perhaps at a
-// reduced price (as laid out in the commitment).
+// Commitment: Represents a Commitment resource. Creating a Commitment
+// resource means that you are purchasing a committed use contract with
+// an explicit start and end time. You can create commitments based on
+// vCPUs and memory usage and receive discounted rates. For full
+// details, read Signing Up for Committed Use Discounts.
+//
+// Committed use discounts are subject to Google Cloud Platform's
+// Service Specific Terms. By purchasing a committed use discount, you
+// agree to these terms. Committed use discounts will not renew, so you
+// must purchase a new commitment to continue receiving discounts.
 type Commitment struct {
 	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339 text
 	// format.
@@ -3635,7 +3646,7 @@ type Commitment struct {
 	StartTimestamp string `json:"startTimestamp,omitempty"`
 
 	// Status: [Output Only] Status of the commitment with regards to
-	// eventual expiration (each commitment has an end-date defined). One of
+	// eventual expiration (each commitment has an end date defined). One of
 	// the following values: NOT_YET_ACTIVE, ACTIVE, EXPIRED.
 	//
 	// Possible values:
@@ -4223,6 +4234,14 @@ type Disk struct {
 
 	// Options: Internal use only.
 	Options string `json:"options,omitempty"`
+
+	// PhysicalBlockSizeBytes: Physical block size of the persistent disk,
+	// in bytes. If not present in a request, a default value is used.
+	// Initially only 4096 is supported, but other powers of two may be
+	// added. If an unsupported value is requested, the error message will
+	// list the supported values, but even a supported value may be allowed
+	// for only some projects.
+	PhysicalBlockSizeBytes int64 `json:"physicalBlockSizeBytes,omitempty,string"`
 
 	// Region: [Output Only] URL of the region where the disk resides. Only
 	// applicable for regional resources.
@@ -5339,15 +5358,16 @@ type ForwardingRule struct {
 	// For global forwarding rules, the address must be a global IP. For
 	// regional forwarding rules, the address must live in the same region
 	// as the forwarding rule. By default, this field is empty and an
-	// ephemeral IP from the same scope (global or regional) will be
-	// assigned.
+	// ephemeral IPv4 address from the same scope (global or regional) will
+	// be assigned. A regional forwarding rule supports IPv4 only. A global
+	// forwarding rule supports either IPv4 or IPv6.
 	//
 	// When the load balancing scheme is INTERNAL, this can only be an RFC
 	// 1918 IP address belonging to the network/subnetwork configured for
 	// the forwarding rule. A reserved address cannot be used. If the field
 	// is empty, the IP address will be automatically allocated from the
 	// internal IP range of the subnetwork or network configured for this
-	// forwarding rule. Only IPv4 is supported.
+	// forwarding rule.
 	IPAddress string `json:"IPAddress,omitempty"`
 
 	// IPProtocol: The IP protocol to which this rule applies. Valid options
@@ -5466,7 +5486,10 @@ type ForwardingRule struct {
 	// ports:
 	// - TargetHttpProxy: 80, 8080
 	// - TargetHttpsProxy: 443
-	// - TargetSslProxy: 443
+	// - TargetTcpProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995
+	//
+	// - TargetSslProxy: 25, 43, 110, 143, 195, 443, 465, 587, 700, 993, 995
+	//
 	// - TargetVpnGateway: 500, 4500
 	// -
 	PortRange string `json:"portRange,omitempty"`
@@ -9374,8 +9397,8 @@ type InstanceProperties struct {
 	// receive packets with destination IP addresses other than their own.
 	// If these instances will be used as an IP gateway or it will be set as
 	// the next-hop in a Route resource, specify true. If unsure, leave this
-	// set to false. See the Enable IP forwarding for instances
-	// documentation for more information.
+	// set to false. See the Enable IP forwarding documentation for more
+	// information.
 	CanIpForward bool `json:"canIpForward,omitempty"`
 
 	// Description: An optional text description for the instances that are
@@ -9964,7 +9987,7 @@ func (s *InstancesStartWithEncryptionKeyRequest) MarshalJSON() ([]byte, error) {
 }
 
 // Interconnect: Protocol definitions for Mixer API to support
-// Interconnect. Next available tag: 20
+// Interconnect. Next available tag: 21
 type Interconnect struct {
 	// AdminEnabled: Administrative status of the interconnect. When this is
 	// set to ?true?, the Interconnect is functional and may carry traffic
@@ -9987,6 +10010,10 @@ type Interconnect struct {
 	// Description: An optional description of this resource. Provide this
 	// property when you create the resource.
 	Description string `json:"description,omitempty"`
+
+	// ExpectedOutages: [Output Only] List of outages expected for this
+	// Interconnect.
+	ExpectedOutages []*InterconnectOutageNotification `json:"expectedOutages,omitempty"`
 
 	// GoogleIpAddress: [Output Only] IP address configured on the Google
 	// side of the Interconnect link. This can be used only for ping tests.
@@ -10043,7 +10070,6 @@ type Interconnect struct {
 	// Possible values:
 	//   "OS_ACTIVE"
 	//   "OS_UNPROVISIONED"
-	//   "OS_UNSPECIFIED"
 	OperationalStatus string `json:"operationalStatus,omitempty"`
 
 	// PeerIpAddress: [Output Only] IP address configured on the customer
@@ -10517,6 +10543,27 @@ type InterconnectLocation struct {
 	// each line in the address is separated by a newline character.
 	Address string `json:"address,omitempty"`
 
+	// AvailabilityZone: Availability zone for this location. Within a city,
+	// maintenance will not be simultaneously scheduled in more than one
+	// availability zone. Example: "zone1" or "zone2".
+	AvailabilityZone string `json:"availabilityZone,omitempty"`
+
+	// City: City designator used by the Interconnect UI to locate this
+	// InterconnectLocation within the Continent. For example: "Chicago,
+	// IL", "Amsterdam, Netherlands".
+	City string `json:"city,omitempty"`
+
+	// Continent: Continent for this location. Used by the location picker
+	// in the Interconnect UI.
+	//
+	// Possible values:
+	//   "C_AFRICA"
+	//   "C_ASIA_PAC"
+	//   "C_EUROPE"
+	//   "C_NORTH_AMERICA"
+	//   "C_SOUTH_AMERICA"
+	Continent string `json:"continent,omitempty"`
+
 	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339 text
 	// format.
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
@@ -10675,11 +10722,68 @@ func (s *InterconnectLocationRegionInfo) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
+// InterconnectOutageNotification: Description of a planned outage on
+// this Interconnect. Next id: 9
+type InterconnectOutageNotification struct {
+	// AffectedCircuits: Iff issue_type is IT_PARTIAL_OUTAGE, a list of the
+	// Google-side circuit IDs that will be affected.
+	AffectedCircuits []string `json:"affectedCircuits,omitempty"`
+
+	// Description: Short user-visible description of the purpose of the
+	// outage.
+	Description string `json:"description,omitempty"`
+
+	EndTime int64 `json:"endTime,omitempty,string"`
+
+	// Possible values:
+	//   "IT_OUTAGE"
+	//   "IT_PARTIAL_OUTAGE"
+	IssueType string `json:"issueType,omitempty"`
+
+	// Name: Unique identifier for this outage notification.
+	Name string `json:"name,omitempty"`
+
+	// Possible values:
+	//   "NSRC_GOOGLE"
+	Source string `json:"source,omitempty"`
+
+	// StartTime: Scheduled start and end times for the outage (milliseconds
+	// since Unix epoch).
+	StartTime int64 `json:"startTime,omitempty,string"`
+
+	// Possible values:
+	//   "NS_ACTIVE"
+	//   "NS_CANCELED"
+	State string `json:"state,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "AffectedCircuits") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "AffectedCircuits") to
+	// include in API requests with the JSON null value. By default, fields
+	// with empty values are omitted from API requests. However, any field
+	// with an empty value appearing in NullFields will be sent to the
+	// server as null. It is an error if a field in this list has a
+	// non-empty value. This may be used to include null fields in Patch
+	// requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *InterconnectOutageNotification) MarshalJSON() ([]byte, error) {
+	type noMethod InterconnectOutageNotification
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
 // License: A license resource.
 type License struct {
-	// ChargesUseFee: [Output Only] If true, the customer will be charged
-	// license fee for running software that contains this license on an
-	// instance.
+	// ChargesUseFee: [Output Only] Deprecated. This field no longer
+	// reflects whether a license charges a usage fee.
 	ChargesUseFee bool `json:"chargesUseFee,omitempty"`
 
 	// CreationTimestamp: [Output Only] Creation timestamp in RFC3339 text
@@ -10824,10 +10928,13 @@ func (s *LicensesListResponse) MarshalJSON() ([]byte, error) {
 
 // LogConfig: Specifies what kind of log the caller must write
 type LogConfig struct {
+	// CloudAudit: Cloud audit options.
+	CloudAudit *LogConfigCloudAuditOptions `json:"cloudAudit,omitempty"`
+
 	// Counter: Counter options.
 	Counter *LogConfigCounterOptions `json:"counter,omitempty"`
 
-	// ForceSendFields is a list of field names (e.g. "Counter") to
+	// ForceSendFields is a list of field names (e.g. "CloudAudit") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -10835,7 +10942,7 @@ type LogConfig struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "Counter") to include in
+	// NullFields is a list of field names (e.g. "CloudAudit") to include in
 	// API requests with the JSON null value. By default, fields with empty
 	// values are omitted from API requests. However, any field with an
 	// empty value appearing in NullFields will be sent to the server as
@@ -10846,6 +10953,39 @@ type LogConfig struct {
 
 func (s *LogConfig) MarshalJSON() ([]byte, error) {
 	type noMethod LogConfig
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+// LogConfigCloudAuditOptions: Write a Cloud Audit log
+type LogConfigCloudAuditOptions struct {
+	// LogName: The log_name to populate in the Cloud Audit Record.
+	//
+	// Possible values:
+	//   "ADMIN_ACTIVITY"
+	//   "DATA_ACCESS"
+	//   "UNSPECIFIED_LOG_NAME"
+	LogName string `json:"logName,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "LogName") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "LogName") to include in
+	// API requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *LogConfigCloudAuditOptions) MarshalJSON() ([]byte, error) {
+	type noMethod LogConfigCloudAuditOptions
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -11260,6 +11400,9 @@ type ManagedInstance struct {
 	// create or delete the instance.
 	LastAttempt *ManagedInstanceLastAttempt `json:"lastAttempt,omitempty"`
 
+	// Override: [Output Only] Override defined for this instance.
+	Override *ManagedInstanceOverride `json:"override,omitempty"`
+
 	// StandbyMode: [Output Only] Standby mode of the instance. This field
 	// is non-empty iff the instance is a standby.
 	//
@@ -11384,6 +11527,77 @@ type ManagedInstanceLastAttemptErrorsErrors struct {
 
 func (s *ManagedInstanceLastAttemptErrorsErrors) MarshalJSON() ([]byte, error) {
 	type noMethod ManagedInstanceLastAttemptErrorsErrors
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+// ManagedInstanceOverride: Overrides of stateful properties for a given
+// instance
+type ManagedInstanceOverride struct {
+	// Disks: The disk overrides defined for this instance
+	Disks []*ManagedInstanceOverrideDiskOverride `json:"disks,omitempty"`
+
+	// Instance: The URL of the instance.
+	Instance string `json:"instance,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Disks") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Disks") to include in API
+	// requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *ManagedInstanceOverride) MarshalJSON() ([]byte, error) {
+	type noMethod ManagedInstanceOverride
+	raw := noMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+type ManagedInstanceOverrideDiskOverride struct {
+	// DeviceName: The name of the device on the VM
+	DeviceName string `json:"deviceName,omitempty"`
+
+	// Mode: The mode in which to attach this disk, either READ_WRITE or
+	// READ_ONLY. If not specified, the default is to attach the disk in
+	// READ_WRITE mode.
+	//
+	// Possible values:
+	//   "READ_ONLY"
+	//   "READ_WRITE"
+	Mode string `json:"mode,omitempty"`
+
+	// Source: The disk that is/will be mounted
+	Source string `json:"source,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "DeviceName") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "DeviceName") to include in
+	// API requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *ManagedInstanceOverrideDiskOverride) MarshalJSON() ([]byte, error) {
+	type noMethod ManagedInstanceOverrideDiskOverride
 	raw := noMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -12871,6 +13085,7 @@ type Quota struct {
 	// Metric: [Output Only] Name of the quota metric.
 	//
 	// Possible values:
+	//   "AMD_S9300_GPUS"
 	//   "AUTOSCALERS"
 	//   "BACKEND_BUCKETS"
 	//   "BACKEND_SERVICES"
@@ -13718,10 +13933,13 @@ func (s *RegionSetLabelsRequest) MarshalJSON() ([]byte, error) {
 // Commitment is composed of one or more of these).
 type ResourceCommitment struct {
 	// Amount: The amount of the resource purchased (in a type-dependent
-	// unit, such as bytes).
+	// unit, such as bytes). For vCPUs, this can just be an integer. For
+	// memory, this must be provided in MB. Memory must be a multiple of 256
+	// MB, with up to 6.5GB of memory per every vCPU.
 	Amount int64 `json:"amount,omitempty,string"`
 
-	// Type: Type of resource for which this commitment applies.
+	// Type: Type of resource for which this commitment applies. Possible
+	// values are VCPU and MEMORY
 	//
 	// Possible values:
 	//   "LOCAL_SSD"
@@ -13786,7 +14004,7 @@ func (s *ResourceGroupReference) MarshalJSON() ([]byte, error) {
 // instances by tags and the set of routes for a particular instance is
 // called its routing table.
 //
-// For each packet leaving a instance, the system searches that
+// For each packet leaving an instance, the system searches that
 // instance's routing table for a single best matching route. Routes
 // match packets by destination IP address, preferring smaller or more
 // specific ranges over larger ones. If there is a tie, the system
@@ -15066,7 +15284,8 @@ type SecurityPolicyRule struct {
 	Preview bool `json:"preview,omitempty"`
 
 	// Priority: An integer indicating the priority of a rule in the list.
-	// Rules are evaluated in the increasing order of priority.
+	// The priority must be a positive value between 0 and 2147483647. Rules
+	// are evaluated in the increasing order of priority.
 	Priority int64 `json:"priority,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Action") to
@@ -15097,6 +15316,9 @@ func (s *SecurityPolicyRule) MarshalJSON() ([]byte, error) {
 type SecurityPolicyRuleMatcher struct {
 	// SrcIpRanges: CIDR IP address range. Only IPv4 is supported.
 	SrcIpRanges []string `json:"srcIpRanges,omitempty"`
+
+	// SrcRegionCodes: Match by country or region code.
+	SrcRegionCodes []string `json:"srcRegionCodes,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "SrcIpRanges") to
 	// unconditionally include in API requests. By default, fields with
@@ -15556,11 +15778,13 @@ type Subnetwork struct {
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 
 	// Description: An optional description of this resource. Provide this
-	// property when you create the resource.
+	// property when you create the resource. This field can be set only at
+	// resource creation time.
 	Description string `json:"description,omitempty"`
 
 	// GatewayAddress: [Output Only] The gateway address for default routes
-	// to reach destination addresses outside this subnetwork.
+	// to reach destination addresses outside this subnetwork. This field
+	// can be set only at resource creation time.
 	GatewayAddress string `json:"gatewayAddress,omitempty"`
 
 	// Id: [Output Only] The unique identifier for the resource. This
@@ -15570,7 +15794,8 @@ type Subnetwork struct {
 	// IpCidrRange: The range of internal addresses that are owned by this
 	// subnetwork. Provide this property when you create the subnetwork. For
 	// example, 10.0.0.0/8 or 192.168.0.0/16. Ranges must be unique and
-	// non-overlapping within a network. Only IPv4 is supported.
+	// non-overlapping within a network. Only IPv4 is supported. This field
+	// can be set only at resource creation time.
 	IpCidrRange string `json:"ipCidrRange,omitempty"`
 
 	// Kind: [Output Only] Type of the resource. Always compute#subnetwork
@@ -15588,14 +15813,18 @@ type Subnetwork struct {
 
 	// Network: The URL of the network to which this subnetwork belongs,
 	// provided by the client when initially creating the subnetwork. Only
-	// networks that are in the distributed mode can have subnetworks.
+	// networks that are in the distributed mode can have subnetworks. This
+	// field can be set only at resource creation time.
 	Network string `json:"network,omitempty"`
 
 	// PrivateIpGoogleAccess: Whether the VMs in this subnet can access
-	// Google services without assigned external IP addresses.
+	// Google services without assigned external IP addresses. This field
+	// can be both set at resource creation time and updated using
+	// setPrivateIpGoogleAccess.
 	PrivateIpGoogleAccess bool `json:"privateIpGoogleAccess,omitempty"`
 
-	// Region: URL of the region where the Subnetwork resides.
+	// Region: URL of the region where the Subnetwork resides. This field
+	// can be set only at resource creation time.
 	Region string `json:"region,omitempty"`
 
 	// SecondaryIpRanges: An array of configurations for secondary IP ranges
@@ -18986,10 +19215,9 @@ func (r *AcceleratorTypesService) AggregatedList(project string) *AcceleratorTyp
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -19001,7 +19229,7 @@ func (r *AcceleratorTypesService) AggregatedList(project string) *AcceleratorTyp
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -19156,7 +19384,7 @@ func (c *AcceleratorTypesAggregatedListCall) Do(opts ...googleapi.CallOption) (*
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -19404,10 +19632,9 @@ func (r *AcceleratorTypesService) List(project string, zone string) *Accelerator
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -19419,7 +19646,7 @@ func (r *AcceleratorTypesService) List(project string, zone string) *Accelerator
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -19576,7 +19803,7 @@ func (c *AcceleratorTypesListCall) Do(opts ...googleapi.CallOption) (*Accelerato
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -19666,10 +19893,9 @@ func (r *AddressesService) AggregatedList(project string) *AddressesAggregatedLi
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -19681,7 +19907,7 @@ func (r *AddressesService) AggregatedList(project string) *AddressesAggregatedLi
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -19836,7 +20062,7 @@ func (c *AddressesAggregatedListCall) Do(opts ...googleapi.CallOption) (*Address
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -19922,8 +20148,17 @@ func (r *AddressesService) Delete(project string, region string, address string)
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *AddressesDeleteCall) RequestId(requestId string) *AddressesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -20043,7 +20278,7 @@ func (c *AddressesDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, erro
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -20246,8 +20481,17 @@ func (r *AddressesService) Insert(project string, region string, address *Addres
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *AddressesInsertCall) RequestId(requestId string) *AddressesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -20363,7 +20607,7 @@ func (c *AddressesInsertCall) Do(opts ...googleapi.CallOption) (*Operation, erro
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -20405,10 +20649,9 @@ func (r *AddressesService) List(project string, region string) *AddressesListCal
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -20420,7 +20663,7 @@ func (r *AddressesService) List(project string, region string) *AddressesListCal
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -20577,7 +20820,7 @@ func (c *AddressesListCall) Do(opts ...googleapi.CallOption) (*AddressList, erro
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -20662,7 +20905,7 @@ type AddressesSetLabelsCall struct {
 }
 
 // SetLabels: Sets the labels on an Address. To learn more about labels,
-// read the Labeling or Tagging Resources documentation.
+// read the Labeling Resources documentation.
 func (r *AddressesService) SetLabels(project string, region string, resource string, regionsetlabelsrequest *RegionSetLabelsRequest) *AddressesSetLabelsCall {
 	c := &AddressesSetLabelsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.project = project
@@ -20672,8 +20915,17 @@ func (r *AddressesService) SetLabels(project string, region string, resource str
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *AddressesSetLabelsCall) RequestId(requestId string) *AddressesSetLabelsCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -20767,7 +21019,7 @@ func (c *AddressesSetLabelsCall) Do(opts ...googleapi.CallOption) (*Operation, e
 	}
 	return ret, nil
 	// {
-	//   "description": "Sets the labels on an Address. To learn more about labels, read the Labeling or Tagging Resources documentation.",
+	//   "description": "Sets the labels on an Address. To learn more about labels, read the Labeling Resources documentation.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.addresses.setLabels",
 	//   "parameterOrder": [
@@ -20791,7 +21043,7 @@ func (c *AddressesSetLabelsCall) Do(opts ...googleapi.CallOption) (*Operation, e
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -20995,10 +21247,9 @@ func (r *AutoscalersService) AggregatedList(project string) *AutoscalersAggregat
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -21010,7 +21261,7 @@ func (r *AutoscalersService) AggregatedList(project string) *AutoscalersAggregat
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -21165,7 +21416,7 @@ func (c *AutoscalersAggregatedListCall) Do(opts ...googleapi.CallOption) (*Autos
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -21250,8 +21501,17 @@ func (r *AutoscalersService) Delete(project string, zone string, autoscaler stri
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *AutoscalersDeleteCall) RequestId(requestId string) *AutoscalersDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -21364,7 +21624,7 @@ func (c *AutoscalersDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, er
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -21573,8 +21833,17 @@ func (r *AutoscalersService) Insert(project string, zone string, autoscaler *Aut
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *AutoscalersInsertCall) RequestId(requestId string) *AutoscalersInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -21683,7 +21952,7 @@ func (c *AutoscalersInsertCall) Do(opts ...googleapi.CallOption) (*Operation, er
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -21731,10 +22000,9 @@ func (r *AutoscalersService) List(project string, zone string) *AutoscalersListC
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -21746,7 +22014,7 @@ func (r *AutoscalersService) List(project string, zone string) *AutoscalersListC
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -21903,7 +22171,7 @@ func (c *AutoscalersListCall) Do(opts ...googleapi.CallOption) (*AutoscalerList,
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -22003,8 +22271,17 @@ func (c *AutoscalersPatchCall) Autoscaler(autoscaler string) *AutoscalersPatchCa
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *AutoscalersPatchCall) RequestId(requestId string) *AutoscalersPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -22119,7 +22396,7 @@ func (c *AutoscalersPatchCall) Do(opts ...googleapi.CallOption) (*Operation, err
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -22335,8 +22612,17 @@ func (c *AutoscalersUpdateCall) Autoscaler(autoscaler string) *AutoscalersUpdate
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *AutoscalersUpdateCall) RequestId(requestId string) *AutoscalersUpdateCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -22451,7 +22737,7 @@ func (c *AutoscalersUpdateCall) Do(opts ...googleapi.CallOption) (*Operation, er
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -22499,8 +22785,17 @@ func (r *BackendBucketsService) AddSignedUrlKey(project string, backendBucket st
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *BackendBucketsAddSignedUrlKeyCall) RequestId(requestId string) *BackendBucketsAddSignedUrlKeyCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -22615,7 +22910,7 @@ func (c *BackendBucketsAddSignedUrlKeyCall) Do(opts ...googleapi.CallOption) (*O
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -22654,8 +22949,17 @@ func (r *BackendBucketsService) Delete(project string, backendBucket string) *Ba
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *BackendBucketsDeleteCall) RequestId(requestId string) *BackendBucketsDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -22766,7 +23070,7 @@ func (c *BackendBucketsDeleteCall) Do(opts ...googleapi.CallOption) (*Operation,
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -22804,8 +23108,17 @@ func (r *BackendBucketsService) DeleteSignedUrlKey(project string, backendBucket
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *BackendBucketsDeleteSignedUrlKeyCall) RequestId(requestId string) *BackendBucketsDeleteSignedUrlKeyCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -22922,7 +23235,7 @@ func (c *BackendBucketsDeleteSignedUrlKeyCall) Do(opts ...googleapi.CallOption) 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -23263,8 +23576,17 @@ func (r *BackendBucketsService) Insert(project string, backendbucket *BackendBuc
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *BackendBucketsInsertCall) RequestId(requestId string) *BackendBucketsInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -23371,7 +23693,7 @@ func (c *BackendBucketsInsertCall) Do(opts ...googleapi.CallOption) (*Operation,
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -23410,10 +23732,9 @@ func (r *BackendBucketsService) List(project string) *BackendBucketsListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -23425,7 +23746,7 @@ func (r *BackendBucketsService) List(project string) *BackendBucketsListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -23580,7 +23901,7 @@ func (c *BackendBucketsListCall) Do(opts ...googleapi.CallOption) (*BackendBucke
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -23666,8 +23987,17 @@ func (r *BackendBucketsService) Patch(project string, backendBucket string, back
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *BackendBucketsPatchCall) RequestId(requestId string) *BackendBucketsPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -23783,7 +24113,7 @@ func (c *BackendBucketsPatchCall) Do(opts ...googleapi.CallOption) (*Operation, 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -24121,8 +24451,17 @@ func (r *BackendBucketsService) Update(project string, backendBucket string, bac
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *BackendBucketsUpdateCall) RequestId(requestId string) *BackendBucketsUpdateCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -24238,7 +24577,7 @@ func (c *BackendBucketsUpdateCall) Do(opts ...googleapi.CallOption) (*Operation,
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -24280,8 +24619,17 @@ func (r *BackendServicesService) AddSignedUrlKey(project string, backendService 
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *BackendServicesAddSignedUrlKeyCall) RequestId(requestId string) *BackendServicesAddSignedUrlKeyCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -24396,7 +24744,7 @@ func (c *BackendServicesAddSignedUrlKeyCall) Do(opts ...googleapi.CallOption) (*
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -24435,10 +24783,9 @@ func (r *BackendServicesService) AggregatedList(project string) *BackendServices
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -24450,7 +24797,7 @@ func (r *BackendServicesService) AggregatedList(project string) *BackendServices
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -24605,7 +24952,7 @@ func (c *BackendServicesAggregatedListCall) Do(opts ...googleapi.CallOption) (*B
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -24689,8 +25036,17 @@ func (r *BackendServicesService) Delete(project string, backendService string) *
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *BackendServicesDeleteCall) RequestId(requestId string) *BackendServicesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -24801,7 +25157,7 @@ func (c *BackendServicesDeleteCall) Do(opts ...googleapi.CallOption) (*Operation
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -24839,8 +25195,17 @@ func (r *BackendServicesService) DeleteSignedUrlKey(project string, backendServi
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *BackendServicesDeleteSignedUrlKeyCall) RequestId(requestId string) *BackendServicesDeleteSignedUrlKeyCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -24957,7 +25322,7 @@ func (c *BackendServicesDeleteSignedUrlKeyCall) Do(opts ...googleapi.CallOption)
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -25298,8 +25663,17 @@ func (r *BackendServicesService) Insert(project string, backendservice *BackendS
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *BackendServicesInsertCall) RequestId(requestId string) *BackendServicesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -25406,7 +25780,7 @@ func (c *BackendServicesInsertCall) Do(opts ...googleapi.CallOption) (*Operation
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -25446,10 +25820,9 @@ func (r *BackendServicesService) List(project string) *BackendServicesListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -25461,7 +25834,7 @@ func (r *BackendServicesService) List(project string) *BackendServicesListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -25616,7 +25989,7 @@ func (c *BackendServicesListCall) Do(opts ...googleapi.CallOption) (*BackendServ
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -25706,8 +26079,17 @@ func (r *BackendServicesService) Patch(project string, backendService string, ba
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *BackendServicesPatchCall) RequestId(requestId string) *BackendServicesPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -25823,7 +26205,7 @@ func (c *BackendServicesPatchCall) Do(opts ...googleapi.CallOption) (*Operation,
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -25866,8 +26248,17 @@ func (r *BackendServicesService) SetSecurityPolicy(project string, backendServic
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *BackendServicesSetSecurityPolicyCall) RequestId(requestId string) *BackendServicesSetSecurityPolicyCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -25982,7 +26373,7 @@ func (c *BackendServicesSetSecurityPolicyCall) Do(opts ...googleapi.CallOption) 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -26175,8 +26566,17 @@ func (r *BackendServicesService) Update(project string, backendService string, b
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *BackendServicesUpdateCall) RequestId(requestId string) *BackendServicesUpdateCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -26292,7 +26692,7 @@ func (c *BackendServicesUpdateCall) Do(opts ...googleapi.CallOption) (*Operation
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -26479,10 +26879,9 @@ func (r *DiskTypesService) AggregatedList(project string) *DiskTypesAggregatedLi
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -26494,7 +26893,7 @@ func (r *DiskTypesService) AggregatedList(project string) *DiskTypesAggregatedLi
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -26649,7 +27048,7 @@ func (c *DiskTypesAggregatedListCall) Do(opts ...googleapi.CallOption) (*DiskTyp
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -26899,10 +27298,9 @@ func (r *DiskTypesService) List(project string, zone string) *DiskTypesListCall 
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -26914,7 +27312,7 @@ func (r *DiskTypesService) List(project string, zone string) *DiskTypesListCall 
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -27071,7 +27469,7 @@ func (c *DiskTypesListCall) Do(opts ...googleapi.CallOption) (*DiskTypeList, err
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -27161,10 +27559,9 @@ func (r *DisksService) AggregatedList(project string) *DisksAggregatedListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -27176,7 +27573,7 @@ func (r *DisksService) AggregatedList(project string) *DisksAggregatedListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -27331,7 +27728,7 @@ func (c *DisksAggregatedListCall) Do(opts ...googleapi.CallOption) (*DiskAggrega
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -27425,8 +27822,17 @@ func (c *DisksCreateSnapshotCall) GuestFlush(guestFlush bool) *DisksCreateSnapsh
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *DisksCreateSnapshotCall) RequestId(requestId string) *DisksCreateSnapshotCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -27548,7 +27954,7 @@ func (c *DisksCreateSnapshotCall) Do(opts ...googleapi.CallOption) (*Operation, 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -27600,8 +28006,17 @@ func (r *DisksService) Delete(project string, zone string, disk string) *DisksDe
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *DisksDeleteCall) RequestId(requestId string) *DisksDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -27713,7 +28128,7 @@ func (c *DisksDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -28090,8 +28505,17 @@ func (r *DisksService) Insert(project string, zone string, disk *Disk) *DisksIns
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *DisksInsertCall) RequestId(requestId string) *DisksInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -28207,7 +28631,7 @@ func (c *DisksInsertCall) Do(opts ...googleapi.CallOption) (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -28261,10 +28685,9 @@ func (r *DisksService) List(project string, zone string) *DisksListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -28276,7 +28699,7 @@ func (r *DisksService) List(project string, zone string) *DisksListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -28433,7 +28856,7 @@ func (c *DisksListCall) Do(opts ...googleapi.CallOption) (*DiskList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -28527,8 +28950,17 @@ func (r *DisksService) Resize(project string, zone string, disk string, disksres
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *DisksResizeCall) RequestId(requestId string) *DisksResizeCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -28646,7 +29078,7 @@ func (c *DisksResizeCall) Do(opts ...googleapi.CallOption) (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -28845,7 +29277,7 @@ type DisksSetLabelsCall struct {
 }
 
 // SetLabels: Sets the labels on a disk. To learn more about labels,
-// read the Labeling or Tagging Resources documentation.
+// read the Labeling Resources documentation.
 func (r *DisksService) SetLabels(project string, zone string, resource string, zonesetlabelsrequest *ZoneSetLabelsRequest) *DisksSetLabelsCall {
 	c := &DisksSetLabelsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.project = project
@@ -28855,8 +29287,17 @@ func (r *DisksService) SetLabels(project string, zone string, resource string, z
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *DisksSetLabelsCall) RequestId(requestId string) *DisksSetLabelsCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -28950,7 +29391,7 @@ func (c *DisksSetLabelsCall) Do(opts ...googleapi.CallOption) (*Operation, error
 	}
 	return ret, nil
 	// {
-	//   "description": "Sets the labels on a disk. To learn more about labels, read the Labeling or Tagging Resources documentation.",
+	//   "description": "Sets the labels on a disk. To learn more about labels, read the Labeling Resources documentation.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.disks.setLabels",
 	//   "parameterOrder": [
@@ -28967,7 +29408,7 @@ func (c *DisksSetLabelsCall) Do(opts ...googleapi.CallOption) (*Operation, error
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -29180,8 +29621,17 @@ func (r *FirewallsService) Delete(project string, firewall string) *FirewallsDel
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *FirewallsDeleteCall) RequestId(requestId string) *FirewallsDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -29292,7 +29742,7 @@ func (c *FirewallsDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, erro
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -29482,8 +29932,17 @@ func (r *FirewallsService) Insert(project string, firewall *Firewall) *Firewalls
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *FirewallsInsertCall) RequestId(requestId string) *FirewallsInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -29590,7 +30049,7 @@ func (c *FirewallsInsertCall) Do(opts ...googleapi.CallOption) (*Operation, erro
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -29630,10 +30089,9 @@ func (r *FirewallsService) List(project string) *FirewallsListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -29645,7 +30103,7 @@ func (r *FirewallsService) List(project string) *FirewallsListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -29800,7 +30258,7 @@ func (c *FirewallsListCall) Do(opts ...googleapi.CallOption) (*FirewallList, err
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -29887,8 +30345,17 @@ func (r *FirewallsService) Patch(project string, firewall string, firewall2 *Fir
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *FirewallsPatchCall) RequestId(requestId string) *FirewallsPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -30004,7 +30471,7 @@ func (c *FirewallsPatchCall) Do(opts ...googleapi.CallOption) (*Operation, error
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -30198,8 +30665,17 @@ func (r *FirewallsService) Update(project string, firewall string, firewall2 *Fi
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *FirewallsUpdateCall) RequestId(requestId string) *FirewallsUpdateCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -30315,7 +30791,7 @@ func (c *FirewallsUpdateCall) Do(opts ...googleapi.CallOption) (*Operation, erro
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -30354,10 +30830,9 @@ func (r *ForwardingRulesService) AggregatedList(project string) *ForwardingRules
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -30369,7 +30844,7 @@ func (r *ForwardingRulesService) AggregatedList(project string) *ForwardingRules
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -30524,7 +30999,7 @@ func (c *ForwardingRulesAggregatedListCall) Do(opts ...googleapi.CallOption) (*F
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -30610,8 +31085,17 @@ func (r *ForwardingRulesService) Delete(project string, region string, forwardin
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ForwardingRulesDeleteCall) RequestId(requestId string) *ForwardingRulesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -30731,7 +31215,7 @@ func (c *ForwardingRulesDeleteCall) Do(opts ...googleapi.CallOption) (*Operation
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -30934,8 +31418,17 @@ func (r *ForwardingRulesService) Insert(project string, region string, forwardin
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ForwardingRulesInsertCall) RequestId(requestId string) *ForwardingRulesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -31051,7 +31544,7 @@ func (c *ForwardingRulesInsertCall) Do(opts ...googleapi.CallOption) (*Operation
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -31093,10 +31586,9 @@ func (r *ForwardingRulesService) List(project string, region string) *Forwarding
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -31108,7 +31600,7 @@ func (r *ForwardingRulesService) List(project string, region string) *Forwarding
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -31265,7 +31757,7 @@ func (c *ForwardingRulesListCall) Do(opts ...googleapi.CallOption) (*ForwardingR
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -31361,8 +31853,17 @@ func (r *ForwardingRulesService) Patch(project string, region string, forwarding
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ForwardingRulesPatchCall) RequestId(requestId string) *ForwardingRulesPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -31487,7 +31988,7 @@ func (c *ForwardingRulesPatchCall) Do(opts ...googleapi.CallOption) (*Operation,
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -31522,7 +32023,7 @@ type ForwardingRulesSetLabelsCall struct {
 }
 
 // SetLabels: Sets the labels on the specified resource. To learn more
-// about labels, read the Labeling or Tagging Resources documentation.
+// about labels, read the Labeling Resources documentation.
 func (r *ForwardingRulesService) SetLabels(project string, region string, resource string, regionsetlabelsrequest *RegionSetLabelsRequest) *ForwardingRulesSetLabelsCall {
 	c := &ForwardingRulesSetLabelsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.project = project
@@ -31532,8 +32033,17 @@ func (r *ForwardingRulesService) SetLabels(project string, region string, resour
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ForwardingRulesSetLabelsCall) RequestId(requestId string) *ForwardingRulesSetLabelsCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -31627,7 +32137,7 @@ func (c *ForwardingRulesSetLabelsCall) Do(opts ...googleapi.CallOption) (*Operat
 	}
 	return ret, nil
 	// {
-	//   "description": "Sets the labels on the specified resource. To learn more about labels, read the Labeling or Tagging Resources documentation.",
+	//   "description": "Sets the labels on the specified resource. To learn more about labels, read the Labeling Resources documentation.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.forwardingRules.setLabels",
 	//   "parameterOrder": [
@@ -31651,7 +32161,7 @@ func (c *ForwardingRulesSetLabelsCall) Do(opts ...googleapi.CallOption) (*Operat
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -31703,8 +32213,17 @@ func (r *ForwardingRulesService) SetTarget(project string, region string, forwar
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ForwardingRulesSetTargetCall) RequestId(requestId string) *ForwardingRulesSetTargetCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -31829,7 +32348,7 @@ func (c *ForwardingRulesSetTargetCall) Do(opts ...googleapi.CallOption) (*Operat
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -32028,8 +32547,17 @@ func (r *GlobalAddressesService) Delete(project string, address string) *GlobalA
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *GlobalAddressesDeleteCall) RequestId(requestId string) *GlobalAddressesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -32140,7 +32668,7 @@ func (c *GlobalAddressesDeleteCall) Do(opts ...googleapi.CallOption) (*Operation
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -32331,8 +32859,17 @@ func (r *GlobalAddressesService) Insert(project string, address *Address) *Globa
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *GlobalAddressesInsertCall) RequestId(requestId string) *GlobalAddressesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -32439,7 +32976,7 @@ func (c *GlobalAddressesInsertCall) Do(opts ...googleapi.CallOption) (*Operation
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -32478,10 +33015,9 @@ func (r *GlobalAddressesService) List(project string) *GlobalAddressesListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -32493,7 +33029,7 @@ func (r *GlobalAddressesService) List(project string) *GlobalAddressesListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -32648,7 +33184,7 @@ func (c *GlobalAddressesListCall) Do(opts ...googleapi.CallOption) (*AddressList
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -32725,7 +33261,7 @@ type GlobalAddressesSetLabelsCall struct {
 }
 
 // SetLabels: Sets the labels on a GlobalAddress. To learn more about
-// labels, read the Labeling or Tagging Resources documentation.
+// labels, read the Labeling Resources documentation.
 func (r *GlobalAddressesService) SetLabels(project string, resource string, globalsetlabelsrequest *GlobalSetLabelsRequest) *GlobalAddressesSetLabelsCall {
 	c := &GlobalAddressesSetLabelsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.project = project
@@ -32821,7 +33357,7 @@ func (c *GlobalAddressesSetLabelsCall) Do(opts ...googleapi.CallOption) (*Operat
 	}
 	return ret, nil
 	// {
-	//   "description": "Sets the labels on a GlobalAddress. To learn more about labels, read the Labeling or Tagging Resources documentation.",
+	//   "description": "Sets the labels on a GlobalAddress. To learn more about labels, read the Labeling Resources documentation.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.globalAddresses.setLabels",
 	//   "parameterOrder": [
@@ -33027,8 +33563,17 @@ func (r *GlobalForwardingRulesService) Delete(project string, forwardingRule str
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *GlobalForwardingRulesDeleteCall) RequestId(requestId string) *GlobalForwardingRulesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -33139,7 +33684,7 @@ func (c *GlobalForwardingRulesDeleteCall) Do(opts ...googleapi.CallOption) (*Ope
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -33330,8 +33875,17 @@ func (r *GlobalForwardingRulesService) Insert(project string, forwardingrule *Fo
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *GlobalForwardingRulesInsertCall) RequestId(requestId string) *GlobalForwardingRulesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -33438,7 +33992,7 @@ func (c *GlobalForwardingRulesInsertCall) Do(opts ...googleapi.CallOption) (*Ope
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -33478,10 +34032,9 @@ func (r *GlobalForwardingRulesService) List(project string) *GlobalForwardingRul
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -33493,7 +34046,7 @@ func (r *GlobalForwardingRulesService) List(project string) *GlobalForwardingRul
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -33648,7 +34201,7 @@ func (c *GlobalForwardingRulesListCall) Do(opts ...googleapi.CallOption) (*Forwa
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -33735,8 +34288,17 @@ func (r *GlobalForwardingRulesService) Patch(project string, forwardingRule stri
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *GlobalForwardingRulesPatchCall) RequestId(requestId string) *GlobalForwardingRulesPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -33852,7 +34414,7 @@ func (c *GlobalForwardingRulesPatchCall) Do(opts ...googleapi.CallOption) (*Oper
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -33886,7 +34448,7 @@ type GlobalForwardingRulesSetLabelsCall struct {
 }
 
 // SetLabels: Sets the labels on the specified resource. To learn more
-// about labels, read the Labeling or Tagging Resources documentation.
+// about labels, read the Labeling Resources documentation.
 func (r *GlobalForwardingRulesService) SetLabels(project string, resource string, globalsetlabelsrequest *GlobalSetLabelsRequest) *GlobalForwardingRulesSetLabelsCall {
 	c := &GlobalForwardingRulesSetLabelsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.project = project
@@ -33982,7 +34544,7 @@ func (c *GlobalForwardingRulesSetLabelsCall) Do(opts ...googleapi.CallOption) (*
 	}
 	return ret, nil
 	// {
-	//   "description": "Sets the labels on the specified resource. To learn more about labels, read the Labeling or Tagging Resources documentation.",
+	//   "description": "Sets the labels on the specified resource. To learn more about labels, read the Labeling Resources documentation.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.globalForwardingRules.setLabels",
 	//   "parameterOrder": [
@@ -34043,8 +34605,17 @@ func (r *GlobalForwardingRulesService) SetTarget(project string, forwardingRule 
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *GlobalForwardingRulesSetTargetCall) RequestId(requestId string) *GlobalForwardingRulesSetTargetCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -34160,7 +34731,7 @@ func (c *GlobalForwardingRulesSetTargetCall) Do(opts ...googleapi.CallOption) (*
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -34347,10 +34918,9 @@ func (r *GlobalOperationsService) AggregatedList(project string) *GlobalOperatio
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -34362,7 +34932,7 @@ func (r *GlobalOperationsService) AggregatedList(project string) *GlobalOperatio
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -34517,7 +35087,7 @@ func (c *GlobalOperationsAggregatedListCall) Do(opts ...googleapi.CallOption) (*
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -34863,10 +35433,9 @@ func (r *GlobalOperationsService) List(project string) *GlobalOperationsListCall
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -34878,7 +35447,7 @@ func (r *GlobalOperationsService) List(project string) *GlobalOperationsListCall
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -35033,7 +35602,7 @@ func (c *GlobalOperationsListCall) Do(opts ...googleapi.CallOption) (*OperationL
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -35116,8 +35685,17 @@ func (r *HealthChecksService) Delete(project string, healthCheck string) *Health
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *HealthChecksDeleteCall) RequestId(requestId string) *HealthChecksDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -35228,7 +35806,7 @@ func (c *HealthChecksDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, e
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -35417,8 +35995,17 @@ func (r *HealthChecksService) Insert(project string, healthcheck *HealthCheck) *
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *HealthChecksInsertCall) RequestId(requestId string) *HealthChecksInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -35525,7 +36112,7 @@ func (c *HealthChecksInsertCall) Do(opts ...googleapi.CallOption) (*Operation, e
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -35564,10 +36151,9 @@ func (r *HealthChecksService) List(project string) *HealthChecksListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -35579,7 +36165,7 @@ func (r *HealthChecksService) List(project string) *HealthChecksListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -35734,7 +36320,7 @@ func (c *HealthChecksListCall) Do(opts ...googleapi.CallOption) (*HealthCheckLis
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -35821,8 +36407,17 @@ func (r *HealthChecksService) Patch(project string, healthCheck string, healthch
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *HealthChecksPatchCall) RequestId(requestId string) *HealthChecksPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -35938,7 +36533,7 @@ func (c *HealthChecksPatchCall) Do(opts ...googleapi.CallOption) (*Operation, er
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -36129,8 +36724,17 @@ func (r *HealthChecksService) Update(project string, healthCheck string, healthc
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *HealthChecksUpdateCall) RequestId(requestId string) *HealthChecksUpdateCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -36246,7 +36850,7 @@ func (c *HealthChecksUpdateCall) Do(opts ...googleapi.CallOption) (*Operation, e
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -36284,10 +36888,9 @@ func (r *HostTypesService) AggregatedList(project string) *HostTypesAggregatedLi
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -36299,7 +36902,7 @@ func (r *HostTypesService) AggregatedList(project string) *HostTypesAggregatedLi
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -36454,7 +37057,7 @@ func (c *HostTypesAggregatedListCall) Do(opts ...googleapi.CallOption) (*HostTyp
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -36702,10 +37305,9 @@ func (r *HostTypesService) List(project string, zone string) *HostTypesListCall 
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -36717,7 +37319,7 @@ func (r *HostTypesService) List(project string, zone string) *HostTypesListCall 
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -36874,7 +37476,7 @@ func (c *HostTypesListCall) Do(opts ...googleapi.CallOption) (*HostTypeList, err
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -36963,10 +37565,9 @@ func (r *HostsService) AggregatedList(project string) *HostsAggregatedListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -36978,7 +37579,7 @@ func (r *HostsService) AggregatedList(project string) *HostsAggregatedListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -37133,7 +37734,7 @@ func (c *HostsAggregatedListCall) Do(opts ...googleapi.CallOption) (*HostAggrega
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -37218,8 +37819,17 @@ func (r *HostsService) Delete(project string, zone string, host string) *HostsDe
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *HostsDeleteCall) RequestId(requestId string) *HostsDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -37332,7 +37942,7 @@ func (c *HostsDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -37704,8 +38314,17 @@ func (r *HostsService) Insert(project string, zone string, host *Host) *HostsIns
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *HostsInsertCall) RequestId(requestId string) *HostsInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -37814,7 +38433,7 @@ func (c *HostsInsertCall) Do(opts ...googleapi.CallOption) (*Operation, error) {
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -37861,10 +38480,9 @@ func (r *HostsService) List(project string, zone string) *HostsListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -37876,7 +38494,7 @@ func (r *HostsService) List(project string, zone string) *HostsListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -38033,7 +38651,7 @@ func (c *HostsListCall) Do(opts ...googleapi.CallOption) (*HostList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -38441,8 +39059,17 @@ func (r *HttpHealthChecksService) Delete(project string, httpHealthCheck string)
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *HttpHealthChecksDeleteCall) RequestId(requestId string) *HttpHealthChecksDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -38553,7 +39180,7 @@ func (c *HttpHealthChecksDeleteCall) Do(opts ...googleapi.CallOption) (*Operatio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -38744,8 +39371,17 @@ func (r *HttpHealthChecksService) Insert(project string, httphealthcheck *HttpHe
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *HttpHealthChecksInsertCall) RequestId(requestId string) *HttpHealthChecksInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -38852,7 +39488,7 @@ func (c *HttpHealthChecksInsertCall) Do(opts ...googleapi.CallOption) (*Operatio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -38892,10 +39528,9 @@ func (r *HttpHealthChecksService) List(project string) *HttpHealthChecksListCall
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -38907,7 +39542,7 @@ func (r *HttpHealthChecksService) List(project string) *HttpHealthChecksListCall
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -39062,7 +39697,7 @@ func (c *HttpHealthChecksListCall) Do(opts ...googleapi.CallOption) (*HttpHealth
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -39150,8 +39785,17 @@ func (r *HttpHealthChecksService) Patch(project string, httpHealthCheck string, 
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *HttpHealthChecksPatchCall) RequestId(requestId string) *HttpHealthChecksPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -39267,7 +39911,7 @@ func (c *HttpHealthChecksPatchCall) Do(opts ...googleapi.CallOption) (*Operation
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -39459,8 +40103,17 @@ func (r *HttpHealthChecksService) Update(project string, httpHealthCheck string,
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *HttpHealthChecksUpdateCall) RequestId(requestId string) *HttpHealthChecksUpdateCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -39576,7 +40229,7 @@ func (c *HttpHealthChecksUpdateCall) Do(opts ...googleapi.CallOption) (*Operatio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -39615,8 +40268,17 @@ func (r *HttpsHealthChecksService) Delete(project string, httpsHealthCheck strin
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *HttpsHealthChecksDeleteCall) RequestId(requestId string) *HttpsHealthChecksDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -39727,7 +40389,7 @@ func (c *HttpsHealthChecksDeleteCall) Do(opts ...googleapi.CallOption) (*Operati
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -39916,8 +40578,17 @@ func (r *HttpsHealthChecksService) Insert(project string, httpshealthcheck *Http
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *HttpsHealthChecksInsertCall) RequestId(requestId string) *HttpsHealthChecksInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -40024,7 +40695,7 @@ func (c *HttpsHealthChecksInsertCall) Do(opts ...googleapi.CallOption) (*Operati
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -40063,10 +40734,9 @@ func (r *HttpsHealthChecksService) List(project string) *HttpsHealthChecksListCa
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -40078,7 +40748,7 @@ func (r *HttpsHealthChecksService) List(project string) *HttpsHealthChecksListCa
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -40233,7 +40903,7 @@ func (c *HttpsHealthChecksListCall) Do(opts ...googleapi.CallOption) (*HttpsHeal
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -40320,8 +40990,17 @@ func (r *HttpsHealthChecksService) Patch(project string, httpsHealthCheck string
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *HttpsHealthChecksPatchCall) RequestId(requestId string) *HttpsHealthChecksPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -40437,7 +41116,7 @@ func (c *HttpsHealthChecksPatchCall) Do(opts ...googleapi.CallOption) (*Operatio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -40628,8 +41307,17 @@ func (r *HttpsHealthChecksService) Update(project string, httpsHealthCheck strin
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *HttpsHealthChecksUpdateCall) RequestId(requestId string) *HttpsHealthChecksUpdateCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -40745,7 +41433,7 @@ func (c *HttpsHealthChecksUpdateCall) Do(opts ...googleapi.CallOption) (*Operati
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -40785,8 +41473,17 @@ func (r *ImagesService) Delete(project string, image string) *ImagesDeleteCall {
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ImagesDeleteCall) RequestId(requestId string) *ImagesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -40897,7 +41594,7 @@ func (c *ImagesDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, error) 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -40939,8 +41636,17 @@ func (r *ImagesService) Deprecate(project string, image string, deprecationstatu
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ImagesDeprecateCall) RequestId(requestId string) *ImagesDeprecateCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -41056,7 +41762,7 @@ func (c *ImagesDeprecateCall) Do(opts ...googleapi.CallOption) (*Operation, erro
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -41561,8 +42267,17 @@ func (c *ImagesInsertCall) ForceCreate(forceCreate bool) *ImagesInsertCall {
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ImagesInsertCall) RequestId(requestId string) *ImagesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -41674,7 +42389,7 @@ func (c *ImagesInsertCall) Do(opts ...googleapi.CallOption) (*Operation, error) 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -41722,10 +42437,9 @@ func (r *ImagesService) List(project string) *ImagesListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -41737,7 +42451,7 @@ func (r *ImagesService) List(project string) *ImagesListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -41892,7 +42606,7 @@ func (c *ImagesListCall) Do(opts ...googleapi.CallOption) (*ImageList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -42116,7 +42830,7 @@ type ImagesSetLabelsCall struct {
 }
 
 // SetLabels: Sets the labels on an image. To learn more about labels,
-// read the Labeling or Tagging Resources documentation.
+// read the Labeling Resources documentation.
 func (r *ImagesService) SetLabels(project string, resource string, globalsetlabelsrequest *GlobalSetLabelsRequest) *ImagesSetLabelsCall {
 	c := &ImagesSetLabelsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.project = project
@@ -42212,7 +42926,7 @@ func (c *ImagesSetLabelsCall) Do(opts ...googleapi.CallOption) (*Operation, erro
 	}
 	return ret, nil
 	// {
-	//   "description": "Sets the labels on an image. To learn more about labels, read the Labeling or Tagging Resources documentation.",
+	//   "description": "Sets the labels on an image. To learn more about labels, read the Labeling Resources documentation.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.images.setLabels",
 	//   "parameterOrder": [
@@ -42421,6 +43135,11 @@ type InstanceGroupManagersAbandonInstancesCall struct {
 // been removed from the group. You must separately verify the status of
 // the abandoning action with the listmanagedinstances method.
 //
+// If the group is part of a backend service that has enabled connection
+// draining, it can take up to 60 seconds after the connection draining
+// duration has elapsed before the VM instance is removed or
+// deleted.
+//
 // You can specify a maximum of 1000 instances with this method per
 // request.
 func (r *InstanceGroupManagersService) AbandonInstances(project string, zone string, instanceGroupManager string, instancegroupmanagersabandoninstancesrequest *InstanceGroupManagersAbandonInstancesRequest) *InstanceGroupManagersAbandonInstancesCall {
@@ -42432,8 +43151,17 @@ func (r *InstanceGroupManagersService) AbandonInstances(project string, zone str
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupManagersAbandonInstancesCall) RequestId(requestId string) *InstanceGroupManagersAbandonInstancesCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -42527,7 +43255,7 @@ func (c *InstanceGroupManagersAbandonInstancesCall) Do(opts ...googleapi.CallOpt
 	}
 	return ret, nil
 	// {
-	//   "description": "Schedules a group action to remove the specified instances from the managed instance group. Abandoning an instance does not delete the instance, but it does remove the instance from any target pools that are applied by the managed instance group. This method reduces the targetSize of the managed instance group by the number of instances that you abandon. This operation is marked as DONE when the action is scheduled even if the instances have not yet been removed from the group. You must separately verify the status of the abandoning action with the listmanagedinstances method.\n\nYou can specify a maximum of 1000 instances with this method per request.",
+	//   "description": "Schedules a group action to remove the specified instances from the managed instance group. Abandoning an instance does not delete the instance, but it does remove the instance from any target pools that are applied by the managed instance group. This method reduces the targetSize of the managed instance group by the number of instances that you abandon. This operation is marked as DONE when the action is scheduled even if the instances have not yet been removed from the group. You must separately verify the status of the abandoning action with the listmanagedinstances method.\n\nIf the group is part of a backend service that has enabled connection draining, it can take up to 60 seconds after the connection draining duration has elapsed before the VM instance is removed or deleted.\n\nYou can specify a maximum of 1000 instances with this method per request.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.instanceGroupManagers.abandonInstances",
 	//   "parameterOrder": [
@@ -42550,7 +43278,7 @@ func (c *InstanceGroupManagersAbandonInstancesCall) Do(opts ...googleapi.CallOpt
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -42595,10 +43323,9 @@ func (r *InstanceGroupManagersService) AggregatedList(project string) *InstanceG
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -42610,7 +43337,7 @@ func (r *InstanceGroupManagersService) AggregatedList(project string) *InstanceG
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -42766,7 +43493,7 @@ func (c *InstanceGroupManagersAggregatedListCall) Do(opts ...googleapi.CallOptio
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -42854,8 +43581,17 @@ func (r *InstanceGroupManagersService) Delete(project string, zone string, insta
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupManagersDeleteCall) RequestId(requestId string) *InstanceGroupManagersDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -42967,7 +43703,7 @@ func (c *InstanceGroupManagersDeleteCall) Do(opts ...googleapi.CallOption) (*Ope
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -43012,6 +43748,11 @@ type InstanceGroupManagersDeleteInstancesCall struct {
 // deleted. You must separately verify the status of the deleting action
 // with the listmanagedinstances method.
 //
+// If the group is part of a backend service that has enabled connection
+// draining, it can take up to 60 seconds after the connection draining
+// duration has elapsed before the VM instance is removed or
+// deleted.
+//
 // You can specify a maximum of 1000 instances with this method per
 // request.
 func (r *InstanceGroupManagersService) DeleteInstances(project string, zone string, instanceGroupManager string, instancegroupmanagersdeleteinstancesrequest *InstanceGroupManagersDeleteInstancesRequest) *InstanceGroupManagersDeleteInstancesCall {
@@ -43023,8 +43764,17 @@ func (r *InstanceGroupManagersService) DeleteInstances(project string, zone stri
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupManagersDeleteInstancesCall) RequestId(requestId string) *InstanceGroupManagersDeleteInstancesCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -43118,7 +43868,7 @@ func (c *InstanceGroupManagersDeleteInstancesCall) Do(opts ...googleapi.CallOpti
 	}
 	return ret, nil
 	// {
-	//   "description": "Schedules a group action to delete the specified instances in the managed instance group. The instances are also removed from any target pools of which they were a member. This method reduces the targetSize of the managed instance group by the number of instances that you delete. This operation is marked as DONE when the action is scheduled even if the instances are still being deleted. You must separately verify the status of the deleting action with the listmanagedinstances method.\n\nYou can specify a maximum of 1000 instances with this method per request.",
+	//   "description": "Schedules a group action to delete the specified instances in the managed instance group. The instances are also removed from any target pools of which they were a member. This method reduces the targetSize of the managed instance group by the number of instances that you delete. This operation is marked as DONE when the action is scheduled even if the instances are still being deleted. You must separately verify the status of the deleting action with the listmanagedinstances method.\n\nIf the group is part of a backend service that has enabled connection draining, it can take up to 60 seconds after the connection draining duration has elapsed before the VM instance is removed or deleted.\n\nYou can specify a maximum of 1000 instances with this method per request.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.instanceGroupManagers.deleteInstances",
 	//   "parameterOrder": [
@@ -43141,7 +43891,7 @@ func (c *InstanceGroupManagersDeleteInstancesCall) Do(opts ...googleapi.CallOpti
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -43350,6 +44100,7 @@ type InstanceGroupManagersInsertCall struct {
 // with the listmanagedinstances method.
 //
 // A managed instance group can have up to 1000 VM instances per group.
+// Please contact Cloud Support if you need an increase in this limit.
 func (r *InstanceGroupManagersService) Insert(project string, zone string, instancegroupmanager *InstanceGroupManager) *InstanceGroupManagersInsertCall {
 	c := &InstanceGroupManagersInsertCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.project = project
@@ -43358,8 +44109,17 @@ func (r *InstanceGroupManagersService) Insert(project string, zone string, insta
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupManagersInsertCall) RequestId(requestId string) *InstanceGroupManagersInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -43452,7 +44212,7 @@ func (c *InstanceGroupManagersInsertCall) Do(opts ...googleapi.CallOption) (*Ope
 	}
 	return ret, nil
 	// {
-	//   "description": "Creates a managed instance group using the information that you specify in the request. After the group is created, it schedules an action to create instances in the group using the specified instance template. This operation is marked as DONE when the group is created even if the instances in the group have not yet been created. You must separately verify the status of the individual instances with the listmanagedinstances method.\n\nA managed instance group can have up to 1000 VM instances per group.",
+	//   "description": "Creates a managed instance group using the information that you specify in the request. After the group is created, it schedules an action to create instances in the group using the specified instance template. This operation is marked as DONE when the group is created even if the instances in the group have not yet been created. You must separately verify the status of the individual instances with the listmanagedinstances method.\n\nA managed instance group can have up to 1000 VM instances per group. Please contact Cloud Support if you need an increase in this limit.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.instanceGroupManagers.insert",
 	//   "parameterOrder": [
@@ -43468,7 +44228,7 @@ func (c *InstanceGroupManagersInsertCall) Do(opts ...googleapi.CallOption) (*Ope
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -43515,10 +44275,9 @@ func (r *InstanceGroupManagersService) List(project string, zone string) *Instan
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -43530,7 +44289,7 @@ func (r *InstanceGroupManagersService) List(project string, zone string) *Instan
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -43687,7 +44446,7 @@ func (c *InstanceGroupManagersListCall) Do(opts ...googleapi.CallOption) (*Insta
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -44002,8 +44761,17 @@ func (r *InstanceGroupManagersService) Patch(project string, zone string, instan
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupManagersPatchCall) RequestId(requestId string) *InstanceGroupManagersPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -44120,7 +44888,7 @@ func (c *InstanceGroupManagersPatchCall) Do(opts ...googleapi.CallOption) (*Oper
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -44168,6 +44936,11 @@ type InstanceGroupManagersRecreateInstancesCall struct {
 // separately verify the status of the recreating action with the
 // listmanagedinstances method.
 //
+// If the group is part of a backend service that has enabled connection
+// draining, it can take up to 60 seconds after the connection draining
+// duration has elapsed before the VM instance is removed or
+// deleted.
+//
 // You can specify a maximum of 1000 instances with this method per
 // request.
 func (r *InstanceGroupManagersService) RecreateInstances(project string, zone string, instanceGroupManager string, instancegroupmanagersrecreateinstancesrequest *InstanceGroupManagersRecreateInstancesRequest) *InstanceGroupManagersRecreateInstancesCall {
@@ -44179,8 +44952,17 @@ func (r *InstanceGroupManagersService) RecreateInstances(project string, zone st
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupManagersRecreateInstancesCall) RequestId(requestId string) *InstanceGroupManagersRecreateInstancesCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -44274,7 +45056,7 @@ func (c *InstanceGroupManagersRecreateInstancesCall) Do(opts ...googleapi.CallOp
 	}
 	return ret, nil
 	// {
-	//   "description": "Schedules a group action to recreate the specified instances in the managed instance group. The instances are deleted and recreated using the current instance template for the managed instance group. This operation is marked as DONE when the action is scheduled even if the instances have not yet been recreated. You must separately verify the status of the recreating action with the listmanagedinstances method.\n\nYou can specify a maximum of 1000 instances with this method per request.",
+	//   "description": "Schedules a group action to recreate the specified instances in the managed instance group. The instances are deleted and recreated using the current instance template for the managed instance group. This operation is marked as DONE when the action is scheduled even if the instances have not yet been recreated. You must separately verify the status of the recreating action with the listmanagedinstances method.\n\nIf the group is part of a backend service that has enabled connection draining, it can take up to 60 seconds after the connection draining duration has elapsed before the VM instance is removed or deleted.\n\nYou can specify a maximum of 1000 instances with this method per request.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.instanceGroupManagers.recreateInstances",
 	//   "parameterOrder": [
@@ -44297,7 +45079,7 @@ func (c *InstanceGroupManagersRecreateInstancesCall) Do(opts ...googleapi.CallOp
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -44342,6 +45124,10 @@ type InstanceGroupManagersResizeCall struct {
 // if the group has not yet added or deleted any instances. You must
 // separately verify the status of the creating or deleting actions with
 // the listmanagedinstances method.
+//
+// If the group is part of a backend service that has enabled connection
+// draining, it can take up to 60 seconds after the connection draining
+// duration has elapsed before the VM instance is removed or deleted.
 func (r *InstanceGroupManagersService) Resize(project string, zone string, instanceGroupManager string, size int64) *InstanceGroupManagersResizeCall {
 	c := &InstanceGroupManagersResizeCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.project = project
@@ -44351,8 +45137,17 @@ func (r *InstanceGroupManagersService) Resize(project string, zone string, insta
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupManagersResizeCall) RequestId(requestId string) *InstanceGroupManagersResizeCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -44441,7 +45236,7 @@ func (c *InstanceGroupManagersResizeCall) Do(opts ...googleapi.CallOption) (*Ope
 	}
 	return ret, nil
 	// {
-	//   "description": "Resizes the managed instance group. If you increase the size, the group creates new instances using the current instance template. If you decrease the size, the group deletes instances. The resize operation is marked DONE when the resize actions are scheduled even if the group has not yet added or deleted any instances. You must separately verify the status of the creating or deleting actions with the listmanagedinstances method.",
+	//   "description": "Resizes the managed instance group. If you increase the size, the group creates new instances using the current instance template. If you decrease the size, the group deletes instances. The resize operation is marked DONE when the resize actions are scheduled even if the group has not yet added or deleted any instances. You must separately verify the status of the creating or deleting actions with the listmanagedinstances method.\n\nIf the group is part of a backend service that has enabled connection draining, it can take up to 60 seconds after the connection draining duration has elapsed before the VM instance is removed or deleted.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.instanceGroupManagers.resize",
 	//   "parameterOrder": [
@@ -44465,7 +45260,7 @@ func (c *InstanceGroupManagersResizeCall) Do(opts ...googleapi.CallOption) (*Ope
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -44519,6 +45314,10 @@ type InstanceGroupManagersResizeAdvancedCall struct {
 // yet added or deleted any instances. You must separately verify the
 // status of the creating, creatingWithoutRetries, or deleting actions
 // with the get or listmanagedinstances method.
+//
+// If the group is part of a backend service that has enabled connection
+// draining, it can take up to 60 seconds after the connection draining
+// duration has elapsed before the VM instance is removed or deleted.
 func (r *InstanceGroupManagersService) ResizeAdvanced(project string, zone string, instanceGroupManager string, instancegroupmanagersresizeadvancedrequest *InstanceGroupManagersResizeAdvancedRequest) *InstanceGroupManagersResizeAdvancedCall {
 	c := &InstanceGroupManagersResizeAdvancedCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.project = project
@@ -44528,8 +45327,17 @@ func (r *InstanceGroupManagersService) ResizeAdvanced(project string, zone strin
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupManagersResizeAdvancedCall) RequestId(requestId string) *InstanceGroupManagersResizeAdvancedCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -44623,7 +45431,7 @@ func (c *InstanceGroupManagersResizeAdvancedCall) Do(opts ...googleapi.CallOptio
 	}
 	return ret, nil
 	// {
-	//   "description": "Resizes the managed instance group with advanced configuration options like disabling creation retries. This is an extended version of the resize method.\n\nIf you increase the size of the instance group, the group creates new instances using the current instance template. If you decrease the size, the group deletes instances. The resize operation is marked DONE when the resize actions are scheduled even if the group has not yet added or deleted any instances. You must separately verify the status of the creating, creatingWithoutRetries, or deleting actions with the get or listmanagedinstances method.",
+	//   "description": "Resizes the managed instance group with advanced configuration options like disabling creation retries. This is an extended version of the resize method.\n\nIf you increase the size of the instance group, the group creates new instances using the current instance template. If you decrease the size, the group deletes instances. The resize operation is marked DONE when the resize actions are scheduled even if the group has not yet added or deleted any instances. You must separately verify the status of the creating, creatingWithoutRetries, or deleting actions with the get or listmanagedinstances method.\n\nIf the group is part of a backend service that has enabled connection draining, it can take up to 60 seconds after the connection draining duration has elapsed before the VM instance is removed or deleted.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.instanceGroupManagers.resizeAdvanced",
 	//   "parameterOrder": [
@@ -44646,7 +45454,7 @@ func (c *InstanceGroupManagersResizeAdvancedCall) Do(opts ...googleapi.CallOptio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -44695,8 +45503,17 @@ func (r *InstanceGroupManagersService) SetAutoHealingPolicies(project string, zo
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupManagersSetAutoHealingPoliciesCall) RequestId(requestId string) *InstanceGroupManagersSetAutoHealingPoliciesCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -44813,7 +45630,7 @@ func (c *InstanceGroupManagersSetAutoHealingPoliciesCall) Do(opts ...googleapi.C
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -44864,8 +45681,17 @@ func (r *InstanceGroupManagersService) SetInstanceTemplate(project string, zone 
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupManagersSetInstanceTemplateCall) RequestId(requestId string) *InstanceGroupManagersSetInstanceTemplateCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -44982,7 +45808,7 @@ func (c *InstanceGroupManagersSetInstanceTemplateCall) Do(opts ...googleapi.Call
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -45037,8 +45863,17 @@ func (r *InstanceGroupManagersService) SetTargetPools(project string, zone strin
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupManagersSetTargetPoolsCall) RequestId(requestId string) *InstanceGroupManagersSetTargetPoolsCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -45155,7 +45990,7 @@ func (c *InstanceGroupManagersSetTargetPoolsCall) Do(opts ...googleapi.CallOptio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -45367,8 +46202,17 @@ func (r *InstanceGroupManagersService) Update(project string, zone string, insta
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupManagersUpdateCall) RequestId(requestId string) *InstanceGroupManagersUpdateCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -45485,7 +46329,7 @@ func (c *InstanceGroupManagersUpdateCall) Do(opts ...googleapi.CallOption) (*Ope
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -45536,8 +46380,17 @@ func (r *InstanceGroupsService) AddInstances(project string, zone string, instan
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupsAddInstancesCall) RequestId(requestId string) *InstanceGroupsAddInstancesCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -45654,7 +46507,7 @@ func (c *InstanceGroupsAddInstancesCall) Do(opts ...googleapi.CallOption) (*Oper
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -45699,10 +46552,9 @@ func (r *InstanceGroupsService) AggregatedList(project string) *InstanceGroupsAg
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -45714,7 +46566,7 @@ func (r *InstanceGroupsService) AggregatedList(project string) *InstanceGroupsAg
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -45869,7 +46721,7 @@ func (c *InstanceGroupsAggregatedListCall) Do(opts ...googleapi.CallOption) (*In
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -45957,8 +46809,17 @@ func (r *InstanceGroupsService) Delete(project string, zone string, instanceGrou
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupsDeleteCall) RequestId(requestId string) *InstanceGroupsDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -46070,7 +46931,7 @@ func (c *InstanceGroupsDeleteCall) Do(opts ...googleapi.CallOption) (*Operation,
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -46276,8 +47137,17 @@ func (r *InstanceGroupsService) Insert(project string, zone string, instancegrou
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupsInsertCall) RequestId(requestId string) *InstanceGroupsInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -46386,7 +47256,7 @@ func (c *InstanceGroupsInsertCall) Do(opts ...googleapi.CallOption) (*Operation,
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -46433,10 +47303,9 @@ func (r *InstanceGroupsService) List(project string, zone string) *InstanceGroup
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -46448,7 +47317,7 @@ func (r *InstanceGroupsService) List(project string, zone string) *InstanceGroup
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -46605,7 +47474,7 @@ func (c *InstanceGroupsListCall) Do(opts ...googleapi.CallOption) (*InstanceGrou
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -46698,10 +47567,9 @@ func (r *InstanceGroupsService) ListInstances(project string, zone string, insta
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -46713,7 +47581,7 @@ func (r *InstanceGroupsService) ListInstances(project string, zone string, insta
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -46864,7 +47732,7 @@ func (c *InstanceGroupsListInstancesCall) Do(opts ...googleapi.CallOption) (*Ins
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -46958,6 +47826,10 @@ type InstanceGroupsRemoveInstancesCall struct {
 
 // RemoveInstances: Removes one or more instances from the specified
 // instance group, but does not delete those instances.
+//
+// If the group is part of a backend service that has enabled connection
+// draining, it can take up to 60 seconds after the connection draining
+// duration before the VM instance is removed or deleted.
 func (r *InstanceGroupsService) RemoveInstances(project string, zone string, instanceGroup string, instancegroupsremoveinstancesrequest *InstanceGroupsRemoveInstancesRequest) *InstanceGroupsRemoveInstancesCall {
 	c := &InstanceGroupsRemoveInstancesCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.project = project
@@ -46967,8 +47839,17 @@ func (r *InstanceGroupsService) RemoveInstances(project string, zone string, ins
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupsRemoveInstancesCall) RequestId(requestId string) *InstanceGroupsRemoveInstancesCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -47062,7 +47943,7 @@ func (c *InstanceGroupsRemoveInstancesCall) Do(opts ...googleapi.CallOption) (*O
 	}
 	return ret, nil
 	// {
-	//   "description": "Removes one or more instances from the specified instance group, but does not delete those instances.",
+	//   "description": "Removes one or more instances from the specified instance group, but does not delete those instances.\n\nIf the group is part of a backend service that has enabled connection draining, it can take up to 60 seconds after the connection draining duration before the VM instance is removed or deleted.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.instanceGroups.removeInstances",
 	//   "parameterOrder": [
@@ -47085,7 +47966,7 @@ func (c *InstanceGroupsRemoveInstancesCall) Do(opts ...googleapi.CallOption) (*O
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -47134,8 +48015,17 @@ func (r *InstanceGroupsService) SetNamedPorts(project string, zone string, insta
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceGroupsSetNamedPortsCall) RequestId(requestId string) *InstanceGroupsSetNamedPortsCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -47252,7 +48142,7 @@ func (c *InstanceGroupsSetNamedPortsCall) Do(opts ...googleapi.CallOption) (*Ope
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -47461,8 +48351,17 @@ func (r *InstanceTemplatesService) Delete(project string, instanceTemplate strin
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceTemplatesDeleteCall) RequestId(requestId string) *InstanceTemplatesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -47573,7 +48472,7 @@ func (c *InstanceTemplatesDeleteCall) Do(opts ...googleapi.CallOption) (*Operati
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -47767,8 +48666,17 @@ func (r *InstanceTemplatesService) Insert(project string, instancetemplate *Inst
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstanceTemplatesInsertCall) RequestId(requestId string) *InstanceTemplatesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -47875,7 +48783,7 @@ func (c *InstanceTemplatesInsertCall) Do(opts ...googleapi.CallOption) (*Operati
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -47915,10 +48823,9 @@ func (r *InstanceTemplatesService) List(project string) *InstanceTemplatesListCa
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -47930,7 +48837,7 @@ func (r *InstanceTemplatesService) List(project string) *InstanceTemplatesListCa
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -48085,7 +48992,7 @@ func (c *InstanceTemplatesListCall) Do(opts ...googleapi.CallOption) (*InstanceT
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -48323,8 +49230,17 @@ func (r *InstancesService) AddAccessConfig(project string, zone string, instance
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesAddAccessConfigCall) RequestId(requestId string) *InstancesAddAccessConfigCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -48449,7 +49365,7 @@ func (c *InstancesAddAccessConfigCall) Do(opts ...googleapi.CallOption) (*Operat
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -48495,10 +49411,9 @@ func (r *InstancesService) AggregatedList(project string) *InstancesAggregatedLi
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -48510,7 +49425,7 @@ func (r *InstancesService) AggregatedList(project string) *InstancesAggregatedLi
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -48665,7 +49580,7 @@ func (c *InstancesAggregatedListCall) Do(opts ...googleapi.CallOption) (*Instanc
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -48764,8 +49679,17 @@ func (c *InstancesAttachDiskCall) ForceAttach(forceAttach bool) *InstancesAttach
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesAttachDiskCall) RequestId(requestId string) *InstancesAttachDiskCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -48888,7 +49812,7 @@ func (c *InstancesAttachDiskCall) Do(opts ...googleapi.CallOption) (*Operation, 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -48938,8 +49862,17 @@ func (r *InstancesService) Delete(project string, zone string, instance string) 
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesDeleteCall) RequestId(requestId string) *InstancesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -49052,7 +49985,7 @@ func (c *InstancesDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, erro
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -49101,8 +50034,17 @@ func (r *InstancesService) DeleteAccessConfig(project string, zone string, insta
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesDeleteAccessConfigCall) RequestId(requestId string) *InstancesDeleteAccessConfigCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -49229,7 +50171,7 @@ func (c *InstancesDeleteAccessConfigCall) Do(opts ...googleapi.CallOption) (*Ope
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -49276,8 +50218,17 @@ func (r *InstancesService) DetachDisk(project string, zone string, instance stri
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesDetachDiskCall) RequestId(requestId string) *InstancesDetachDiskCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -49397,7 +50348,7 @@ func (c *InstancesDetachDiskCall) Do(opts ...googleapi.CallOption) (*Operation, 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -49968,10 +50919,35 @@ func (r *InstancesService) Insert(project string, zone string, instance *Instanc
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesInsertCall) RequestId(requestId string) *InstancesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
+	return c
+}
+
+// SourceInstanceTemplate sets the optional parameter
+// "sourceInstanceTemplate": Specifies instance template to create the
+// instance.
+//
+// This field is optional. It can be a full or partial URL. For example,
+// the following are all valid URLs to an instance template:
+// -
+// https://www.googleapis.com/compute/v1/projects/project/global/global/instanceTemplates/instanceTemplate
+// - projects/project/global/global/instanceTemplates/instanceTemplate
+//
+// - global/instancesTemplates/instanceTemplate
+func (c *InstancesInsertCall) SourceInstanceTemplate(sourceInstanceTemplate string) *InstancesInsertCall {
+	c.urlParams_.Set("sourceInstanceTemplate", sourceInstanceTemplate)
 	return c
 }
 
@@ -50078,7 +51054,12 @@ func (c *InstancesInsertCall) Do(opts ...googleapi.CallOption) (*Operation, erro
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "sourceInstanceTemplate": {
+	//       "description": "Specifies instance template to create the instance.\n\nThis field is optional. It can be a full or partial URL. For example, the following are all valid URLs to an instance template:  \n- https://www.googleapis.com/compute/v1/projects/project/global/global/instanceTemplates/instanceTemplate \n- projects/project/global/global/instanceTemplates/instanceTemplate \n- global/instancesTemplates/instanceTemplate",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -50127,10 +51108,9 @@ func (r *InstancesService) List(project string, zone string) *InstancesListCall 
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -50142,7 +51122,7 @@ func (r *InstancesService) List(project string, zone string) *InstancesListCall 
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -50299,7 +51279,7 @@ func (c *InstancesListCall) Do(opts ...googleapi.CallOption) (*InstanceList, err
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -50393,10 +51373,9 @@ func (r *InstancesService) ListReferrers(project string, zone string, instance s
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -50408,7 +51387,7 @@ func (r *InstancesService) ListReferrers(project string, zone string, instance s
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -50567,7 +51546,7 @@ func (c *InstancesListReferrersCall) Do(opts ...googleapi.CallOption) (*Instance
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -50668,8 +51647,17 @@ func (r *InstancesService) Reset(project string, zone string, instance string) *
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesResetCall) RequestId(requestId string) *InstancesResetCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -50782,7 +51770,7 @@ func (c *InstancesResetCall) Do(opts ...googleapi.CallOption) (*Operation, error
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -50831,8 +51819,17 @@ func (r *InstancesService) SetDiskAutoDelete(project string, zone string, instan
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesSetDiskAutoDeleteCall) RequestId(requestId string) *InstancesSetDiskAutoDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -50960,7 +51957,7 @@ func (c *InstancesSetDiskAutoDeleteCall) Do(opts ...googleapi.CallOption) (*Oper
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -51156,7 +52153,7 @@ type InstancesSetLabelsCall struct {
 }
 
 // SetLabels: Sets labels on an instance. To learn more about labels,
-// read the Labeling or Tagging Resources documentation.
+// read the Labeling Resources documentation.
 func (r *InstancesService) SetLabels(project string, zone string, instance string, instancessetlabelsrequest *InstancesSetLabelsRequest) *InstancesSetLabelsCall {
 	c := &InstancesSetLabelsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.project = project
@@ -51166,8 +52163,17 @@ func (r *InstancesService) SetLabels(project string, zone string, instance strin
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesSetLabelsCall) RequestId(requestId string) *InstancesSetLabelsCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -51261,7 +52267,7 @@ func (c *InstancesSetLabelsCall) Do(opts ...googleapi.CallOption) (*Operation, e
 	}
 	return ret, nil
 	// {
-	//   "description": "Sets labels on an instance. To learn more about labels, read the Labeling or Tagging Resources documentation.",
+	//   "description": "Sets labels on an instance. To learn more about labels, read the Labeling Resources documentation.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.instances.setLabels",
 	//   "parameterOrder": [
@@ -51285,7 +52291,7 @@ func (c *InstancesSetLabelsCall) Do(opts ...googleapi.CallOption) (*Operation, e
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -51336,8 +52342,17 @@ func (r *InstancesService) SetMachineResources(project string, zone string, inst
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesSetMachineResourcesCall) RequestId(requestId string) *InstancesSetMachineResourcesCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -51455,7 +52470,7 @@ func (c *InstancesSetMachineResourcesCall) Do(opts ...googleapi.CallOption) (*Op
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -51506,8 +52521,17 @@ func (r *InstancesService) SetMachineType(project string, zone string, instance 
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesSetMachineTypeCall) RequestId(requestId string) *InstancesSetMachineTypeCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -51625,7 +52649,7 @@ func (c *InstancesSetMachineTypeCall) Do(opts ...googleapi.CallOption) (*Operati
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -51677,8 +52701,17 @@ func (r *InstancesService) SetMetadata(project string, zone string, instance str
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesSetMetadataCall) RequestId(requestId string) *InstancesSetMetadataCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -51796,7 +52829,7 @@ func (c *InstancesSetMetadataCall) Do(opts ...googleapi.CallOption) (*Operation,
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -51847,8 +52880,17 @@ func (r *InstancesService) SetMinCpuPlatform(project string, zone string, instan
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesSetMinCpuPlatformCall) RequestId(requestId string) *InstancesSetMinCpuPlatformCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -51966,7 +53008,7 @@ func (c *InstancesSetMinCpuPlatformCall) Do(opts ...googleapi.CallOption) (*Oper
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -52017,8 +53059,17 @@ func (r *InstancesService) SetScheduling(project string, zone string, instance s
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesSetSchedulingCall) RequestId(requestId string) *InstancesSetSchedulingCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -52136,7 +53187,7 @@ func (c *InstancesSetSchedulingCall) Do(opts ...googleapi.CallOption) (*Operatio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -52188,8 +53239,17 @@ func (r *InstancesService) SetServiceAccount(project string, zone string, instan
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesSetServiceAccountCall) RequestId(requestId string) *InstancesSetServiceAccountCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -52307,7 +53367,7 @@ func (c *InstancesSetServiceAccountCall) Do(opts ...googleapi.CallOption) (*Oper
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -52359,8 +53419,17 @@ func (r *InstancesService) SetTags(project string, zone string, instance string,
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesSetTagsCall) RequestId(requestId string) *InstancesSetTagsCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -52478,7 +53547,7 @@ func (c *InstancesSetTagsCall) Do(opts ...googleapi.CallOption) (*Operation, err
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -52677,8 +53746,17 @@ func (r *InstancesService) Start(project string, zone string, instance string) *
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesStartCall) RequestId(requestId string) *InstancesStartCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -52791,7 +53869,7 @@ func (c *InstancesStartCall) Do(opts ...googleapi.CallOption) (*Operation, error
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -52840,8 +53918,17 @@ func (r *InstancesService) StartWithEncryptionKey(project string, zone string, i
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesStartWithEncryptionKeyCall) RequestId(requestId string) *InstancesStartWithEncryptionKeyCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -52959,7 +54046,7 @@ func (c *InstancesStartWithEncryptionKeyCall) Do(opts ...googleapi.CallOption) (
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -53022,8 +54109,17 @@ func (c *InstancesStopCall) DiscardLocalSsd(discardLocalSsd bool) *InstancesStop
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesStopCall) RequestId(requestId string) *InstancesStopCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -53141,7 +54237,7 @@ func (c *InstancesStopCall) Do(opts ...googleapi.CallOption) (*Operation, error)
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -53199,8 +54295,17 @@ func (c *InstancesSuspendCall) DiscardLocalSsd(discardLocalSsd bool) *InstancesS
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesSuspendCall) RequestId(requestId string) *InstancesSuspendCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -53318,7 +54423,7 @@ func (c *InstancesSuspendCall) Do(opts ...googleapi.CallOption) (*Operation, err
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -53526,8 +54631,17 @@ func (r *InstancesService) UpdateAccessConfig(project string, zone string, insta
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesUpdateAccessConfigCall) RequestId(requestId string) *InstancesUpdateAccessConfigCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -53652,7 +54766,7 @@ func (c *InstancesUpdateAccessConfigCall) Do(opts ...googleapi.CallOption) (*Ope
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -53704,8 +54818,17 @@ func (r *InstancesService) UpdateNetworkInterface(project string, zone string, i
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InstancesUpdateNetworkInterfaceCall) RequestId(requestId string) *InstancesUpdateNetworkInterfaceCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -53830,7 +54953,7 @@ func (c *InstancesUpdateNetworkInterfaceCall) Do(opts ...googleapi.CallOption) (
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -53876,10 +54999,9 @@ func (r *InterconnectAttachmentsService) AggregatedList(project string) *Interco
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -53891,7 +55013,7 @@ func (r *InterconnectAttachmentsService) AggregatedList(project string) *Interco
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -54047,7 +55169,7 @@ func (c *InterconnectAttachmentsAggregatedListCall) Do(opts ...googleapi.CallOpt
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -54132,8 +55254,17 @@ func (r *InterconnectAttachmentsService) Delete(project string, region string, i
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InterconnectAttachmentsDeleteCall) RequestId(requestId string) *InterconnectAttachmentsDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -54253,7 +55384,7 @@ func (c *InterconnectAttachmentsDeleteCall) Do(opts ...googleapi.CallOption) (*O
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -54617,8 +55748,17 @@ func (r *InterconnectAttachmentsService) Insert(project string, region string, i
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InterconnectAttachmentsInsertCall) RequestId(requestId string) *InterconnectAttachmentsInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -54734,7 +55874,7 @@ func (c *InterconnectAttachmentsInsertCall) Do(opts ...googleapi.CallOption) (*O
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -54775,10 +55915,9 @@ func (r *InterconnectAttachmentsService) List(project string, region string) *In
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -54790,7 +55929,7 @@ func (r *InterconnectAttachmentsService) List(project string, region string) *In
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -54947,7 +56086,7 @@ func (c *InterconnectAttachmentsListCall) Do(opts ...googleapi.CallOption) (*Int
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -55349,10 +56488,9 @@ func (r *InterconnectLocationsService) List(project string) *InterconnectLocatio
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -55364,7 +56502,7 @@ func (r *InterconnectLocationsService) List(project string) *InterconnectLocatio
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -55519,7 +56657,7 @@ func (c *InterconnectLocationsListCall) Do(opts ...googleapi.CallOption) (*Inter
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -55750,8 +56888,17 @@ func (r *InterconnectsService) Delete(project string, interconnect string) *Inte
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InterconnectsDeleteCall) RequestId(requestId string) *InterconnectsDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -55862,7 +57009,7 @@ func (c *InterconnectsDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -56051,8 +57198,17 @@ func (r *InterconnectsService) Insert(project string, interconnect *Interconnect
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InterconnectsInsertCall) RequestId(requestId string) *InterconnectsInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -56159,7 +57315,7 @@ func (c *InterconnectsInsertCall) Do(opts ...googleapi.CallOption) (*Operation, 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -56198,10 +57354,9 @@ func (r *InterconnectsService) List(project string) *InterconnectsListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -56213,7 +57368,7 @@ func (r *InterconnectsService) List(project string) *InterconnectsListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -56368,7 +57523,7 @@ func (c *InterconnectsListCall) Do(opts ...googleapi.CallOption) (*InterconnectL
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -56454,8 +57609,17 @@ func (r *InterconnectsService) Patch(project string, interconnect string, interc
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *InterconnectsPatchCall) RequestId(requestId string) *InterconnectsPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -56571,7 +57735,7 @@ func (c *InterconnectsPatchCall) Do(opts ...googleapi.CallOption) (*Operation, e
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -56735,6 +57899,142 @@ func (c *InterconnectsTestIamPermissionsCall) Do(opts ...googleapi.CallOption) (
 	//     "https://www.googleapis.com/auth/cloud-platform",
 	//     "https://www.googleapis.com/auth/compute",
 	//     "https://www.googleapis.com/auth/compute.readonly"
+	//   ]
+	// }
+
+}
+
+// method id "compute.licenses.delete":
+
+type LicensesDeleteCall struct {
+	s          *Service
+	project    string
+	license    string
+	urlParams_ gensupport.URLParams
+	ctx_       context.Context
+	header_    http.Header
+}
+
+// Delete: Deletes the specified license.
+func (r *LicensesService) Delete(project string, license string) *LicensesDeleteCall {
+	c := &LicensesDeleteCall{s: r.s, urlParams_: make(gensupport.URLParams)}
+	c.project = project
+	c.license = license
+	return c
+}
+
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *LicensesDeleteCall) Fields(s ...googleapi.Field) *LicensesDeleteCall {
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
+	return c
+}
+
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
+func (c *LicensesDeleteCall) Context(ctx context.Context) *LicensesDeleteCall {
+	c.ctx_ = ctx
+	return c
+}
+
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *LicensesDeleteCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
+func (c *LicensesDeleteCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	var body io.Reader = nil
+	c.urlParams_.Set("alt", alt)
+	urls := googleapi.ResolveRelative(c.s.BasePath, "{project}/global/licenses/{license}")
+	urls += "?" + c.urlParams_.Encode()
+	req, _ := http.NewRequest("DELETE", urls, body)
+	req.Header = reqHeaders
+	googleapi.Expand(req.URL, map[string]string{
+		"project": c.project,
+		"license": c.license,
+	})
+	return gensupport.SendRequest(c.ctx_, c.s.client, req)
+}
+
+// Do executes the "compute.licenses.delete" call.
+// Exactly one of *Operation or error will be non-nil. Any non-2xx
+// status code is an error. Response headers are in either
+// *Operation.ServerResponse.Header or (if a response was returned at
+// all) in error.(*googleapi.Error).Header. Use googleapi.IsNotModified
+// to check whether the returned error was because
+// http.StatusNotModified was returned.
+func (c *LicensesDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
+	res, err := c.doRequest("json")
+	if res != nil && res.StatusCode == http.StatusNotModified {
+		if res.Body != nil {
+			res.Body.Close()
+		}
+		return nil, &googleapi.Error{
+			Code:   res.StatusCode,
+			Header: res.Header,
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	ret := &Operation{
+		ServerResponse: googleapi.ServerResponse{
+			Header:         res.Header,
+			HTTPStatusCode: res.StatusCode,
+		},
+	}
+	target := &ret
+	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Deletes the specified license.",
+	//   "httpMethod": "DELETE",
+	//   "id": "compute.licenses.delete",
+	//   "parameterOrder": [
+	//     "project",
+	//     "license"
+	//   ],
+	//   "parameters": {
+	//     "license": {
+	//       "description": "Name of the license resource to delete.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "project": {
+	//       "description": "Project ID for this request.",
+	//       "location": "path",
+	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+	//       "required": true,
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "{project}/global/licenses/{license}",
+	//   "response": {
+	//     "$ref": "Operation"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
+	//     "https://www.googleapis.com/auth/compute"
 	//   ]
 	// }
 
@@ -56912,8 +58212,17 @@ func (r *LicensesService) Insert(project string, license *License) *LicensesInse
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *LicensesInsertCall) RequestId(requestId string) *LicensesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -57020,7 +58329,7 @@ func (c *LicensesInsertCall) Do(opts ...googleapi.CallOption) (*Operation, error
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -57066,10 +58375,9 @@ func (r *LicensesService) List(project string) *LicensesListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -57081,7 +58389,7 @@ func (r *LicensesService) List(project string) *LicensesListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -57236,7 +58544,7 @@ func (c *LicensesListCall) Do(opts ...googleapi.CallOption) (*LicensesListRespon
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -57319,10 +58627,9 @@ func (r *MachineTypesService) AggregatedList(project string) *MachineTypesAggreg
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -57334,7 +58641,7 @@ func (r *MachineTypesService) AggregatedList(project string) *MachineTypesAggreg
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -57489,7 +58796,7 @@ func (c *MachineTypesAggregatedListCall) Do(opts ...googleapi.CallOption) (*Mach
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -57739,10 +59046,9 @@ func (r *MachineTypesService) List(project string, zone string) *MachineTypesLis
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -57754,7 +59060,7 @@ func (r *MachineTypesService) List(project string, zone string) *MachineTypesLis
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -57911,7 +59217,7 @@ func (c *MachineTypesListCall) Do(opts ...googleapi.CallOption) (*MachineTypeLis
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -58003,8 +59309,17 @@ func (r *NetworksService) AddPeering(project string, network string, networksadd
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *NetworksAddPeeringCall) RequestId(requestId string) *NetworksAddPeeringCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -58120,7 +59435,7 @@ func (c *NetworksAddPeeringCall) Do(opts ...googleapi.CallOption) (*Operation, e
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -58160,8 +59475,17 @@ func (r *NetworksService) Delete(project string, network string) *NetworksDelete
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *NetworksDeleteCall) RequestId(requestId string) *NetworksDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -58272,7 +59596,7 @@ func (c *NetworksDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, error
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -58463,8 +59787,17 @@ func (r *NetworksService) Insert(project string, network *Network) *NetworksInse
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *NetworksInsertCall) RequestId(requestId string) *NetworksInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -58571,7 +59904,7 @@ func (c *NetworksInsertCall) Do(opts ...googleapi.CallOption) (*Operation, error
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -58611,10 +59944,9 @@ func (r *NetworksService) List(project string) *NetworksListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -58626,7 +59958,7 @@ func (r *NetworksService) List(project string) *NetworksListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -58781,7 +60113,7 @@ func (c *NetworksListCall) Do(opts ...googleapi.CallOption) (*NetworkList, error
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -58845,6 +60177,175 @@ func (c *NetworksListCall) Pages(ctx context.Context, f func(*NetworkList) error
 	}
 }
 
+// method id "compute.networks.patch":
+
+type NetworksPatchCall struct {
+	s          *Service
+	project    string
+	network    string
+	network2   *Network
+	urlParams_ gensupport.URLParams
+	ctx_       context.Context
+	header_    http.Header
+}
+
+// Patch: Patches the specified network with the data included in the
+// request.
+func (r *NetworksService) Patch(project string, network string, network2 *Network) *NetworksPatchCall {
+	c := &NetworksPatchCall{s: r.s, urlParams_: make(gensupport.URLParams)}
+	c.project = project
+	c.network = network
+	c.network2 = network2
+	return c
+}
+
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
+func (c *NetworksPatchCall) RequestId(requestId string) *NetworksPatchCall {
+	c.urlParams_.Set("requestId", requestId)
+	return c
+}
+
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *NetworksPatchCall) Fields(s ...googleapi.Field) *NetworksPatchCall {
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
+	return c
+}
+
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
+func (c *NetworksPatchCall) Context(ctx context.Context) *NetworksPatchCall {
+	c.ctx_ = ctx
+	return c
+}
+
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *NetworksPatchCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
+func (c *NetworksPatchCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	var body io.Reader = nil
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.network2)
+	if err != nil {
+		return nil, err
+	}
+	reqHeaders.Set("Content-Type", "application/json")
+	c.urlParams_.Set("alt", alt)
+	urls := googleapi.ResolveRelative(c.s.BasePath, "{project}/global/networks/{network}")
+	urls += "?" + c.urlParams_.Encode()
+	req, _ := http.NewRequest("PATCH", urls, body)
+	req.Header = reqHeaders
+	googleapi.Expand(req.URL, map[string]string{
+		"project": c.project,
+		"network": c.network,
+	})
+	return gensupport.SendRequest(c.ctx_, c.s.client, req)
+}
+
+// Do executes the "compute.networks.patch" call.
+// Exactly one of *Operation or error will be non-nil. Any non-2xx
+// status code is an error. Response headers are in either
+// *Operation.ServerResponse.Header or (if a response was returned at
+// all) in error.(*googleapi.Error).Header. Use googleapi.IsNotModified
+// to check whether the returned error was because
+// http.StatusNotModified was returned.
+func (c *NetworksPatchCall) Do(opts ...googleapi.CallOption) (*Operation, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
+	res, err := c.doRequest("json")
+	if res != nil && res.StatusCode == http.StatusNotModified {
+		if res.Body != nil {
+			res.Body.Close()
+		}
+		return nil, &googleapi.Error{
+			Code:   res.StatusCode,
+			Header: res.Header,
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	ret := &Operation{
+		ServerResponse: googleapi.ServerResponse{
+			Header:         res.Header,
+			HTTPStatusCode: res.StatusCode,
+		},
+	}
+	target := &ret
+	if err := json.NewDecoder(res.Body).Decode(target); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "description": "Patches the specified network with the data included in the request.",
+	//   "httpMethod": "PATCH",
+	//   "id": "compute.networks.patch",
+	//   "parameterOrder": [
+	//     "project",
+	//     "network"
+	//   ],
+	//   "parameters": {
+	//     "network": {
+	//       "description": "Name of the network to update.",
+	//       "location": "path",
+	//       "pattern": "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "project": {
+	//       "description": "Project ID for this request.",
+	//       "location": "path",
+	//       "pattern": "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?))",
+	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "requestId": {
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
+	//       "location": "query",
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "{project}/global/networks/{network}",
+	//   "request": {
+	//     "$ref": "Network"
+	//   },
+	//   "response": {
+	//     "$ref": "Operation"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/cloud-platform",
+	//     "https://www.googleapis.com/auth/compute",
+	//     "https://www.googleapis.com/auth/compute.readonly"
+	//   ]
+	// }
+
+}
+
 // method id "compute.networks.removePeering":
 
 type NetworksRemovePeeringCall struct {
@@ -58866,8 +60367,17 @@ func (r *NetworksService) RemovePeering(project string, network string, networks
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *NetworksRemovePeeringCall) RequestId(requestId string) *NetworksRemovePeeringCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -58983,7 +60493,7 @@ func (c *NetworksRemovePeeringCall) Do(opts ...googleapi.CallOption) (*Operation
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -59023,8 +60533,17 @@ func (r *NetworksService) SwitchToCustomMode(project string, network string) *Ne
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *NetworksSwitchToCustomModeCall) RequestId(requestId string) *NetworksSwitchToCustomModeCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -59135,7 +60654,7 @@ func (c *NetworksSwitchToCustomModeCall) Do(opts ...googleapi.CallOption) (*Oper
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -59317,8 +60836,17 @@ func (r *ProjectsService) DisableXpnHost(project string) *ProjectsDisableXpnHost
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ProjectsDisableXpnHostCall) RequestId(requestId string) *ProjectsDisableXpnHostCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -59420,7 +60948,7 @@ func (c *ProjectsDisableXpnHostCall) Do(opts ...googleapi.CallOption) (*Operatio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -59457,8 +60985,17 @@ func (r *ProjectsService) DisableXpnResource(project string, projectsdisablexpnr
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ProjectsDisableXpnResourceCall) RequestId(requestId string) *ProjectsDisableXpnResourceCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -59565,7 +61102,7 @@ func (c *ProjectsDisableXpnResourceCall) Do(opts ...googleapi.CallOption) (*Oper
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -59602,8 +61139,17 @@ func (r *ProjectsService) EnableXpnHost(project string) *ProjectsEnableXpnHostCa
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ProjectsEnableXpnHostCall) RequestId(requestId string) *ProjectsEnableXpnHostCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -59705,7 +61251,7 @@ func (c *ProjectsEnableXpnHostCall) Do(opts ...googleapi.CallOption) (*Operation
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -59744,8 +61290,17 @@ func (r *ProjectsService) EnableXpnResource(project string, projectsenablexpnres
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ProjectsEnableXpnResourceCall) RequestId(requestId string) *ProjectsEnableXpnResourceCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -59852,7 +61407,7 @@ func (c *ProjectsEnableXpnResourceCall) Do(opts ...googleapi.CallOption) (*Opera
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -60578,8 +62133,17 @@ func (r *ProjectsService) MoveDisk(project string, diskmoverequest *DiskMoveRequ
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ProjectsMoveDiskCall) RequestId(requestId string) *ProjectsMoveDiskCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -60686,7 +62250,7 @@ func (c *ProjectsMoveDiskCall) Do(opts ...googleapi.CallOption) (*Operation, err
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -60726,8 +62290,17 @@ func (r *ProjectsService) MoveInstance(project string, instancemoverequest *Inst
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ProjectsMoveInstanceCall) RequestId(requestId string) *ProjectsMoveInstanceCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -60834,7 +62407,7 @@ func (c *ProjectsMoveInstanceCall) Do(opts ...googleapi.CallOption) (*Operation,
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -60875,8 +62448,17 @@ func (r *ProjectsService) SetCommonInstanceMetadata(project string, metadata *Me
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ProjectsSetCommonInstanceMetadataCall) RequestId(requestId string) *ProjectsSetCommonInstanceMetadataCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -60983,7 +62565,7 @@ func (c *ProjectsSetCommonInstanceMetadataCall) Do(opts ...googleapi.CallOption)
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -61024,8 +62606,17 @@ func (r *ProjectsService) SetDefaultServiceAccount(project string, projectssetde
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ProjectsSetDefaultServiceAccountCall) RequestId(requestId string) *ProjectsSetDefaultServiceAccountCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -61132,7 +62723,7 @@ func (c *ProjectsSetDefaultServiceAccountCall) Do(opts ...googleapi.CallOption) 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -61175,8 +62766,17 @@ func (r *ProjectsService) SetUsageExportBucket(project string, usageexportlocati
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *ProjectsSetUsageExportBucketCall) RequestId(requestId string) *ProjectsSetUsageExportBucketCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -61283,7 +62883,7 @@ func (c *ProjectsSetUsageExportBucketCall) Do(opts ...googleapi.CallOption) (*Op
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -61327,8 +62927,17 @@ func (r *RegionAutoscalersService) Delete(project string, region string, autosca
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionAutoscalersDeleteCall) RequestId(requestId string) *RegionAutoscalersDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -61448,7 +63057,7 @@ func (c *RegionAutoscalersDeleteCall) Do(opts ...googleapi.CallOption) (*Operati
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -61649,8 +63258,17 @@ func (r *RegionAutoscalersService) Insert(project string, region string, autosca
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionAutoscalersInsertCall) RequestId(requestId string) *RegionAutoscalersInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -61766,7 +63384,7 @@ func (c *RegionAutoscalersInsertCall) Do(opts ...googleapi.CallOption) (*Operati
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -61807,10 +63425,9 @@ func (r *RegionAutoscalersService) List(project string, region string) *RegionAu
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -61822,7 +63439,7 @@ func (r *RegionAutoscalersService) List(project string, region string) *RegionAu
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -61979,7 +63596,7 @@ func (c *RegionAutoscalersListCall) Do(opts ...googleapi.CallOption) (*RegionAut
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -62079,8 +63696,17 @@ func (c *RegionAutoscalersPatchCall) Autoscaler(autoscaler string) *RegionAutosc
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionAutoscalersPatchCall) RequestId(requestId string) *RegionAutoscalersPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -62202,7 +63828,7 @@ func (c *RegionAutoscalersPatchCall) Do(opts ...googleapi.CallOption) (*Operatio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -62411,8 +64037,17 @@ func (c *RegionAutoscalersUpdateCall) Autoscaler(autoscaler string) *RegionAutos
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionAutoscalersUpdateCall) RequestId(requestId string) *RegionAutoscalersUpdateCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -62534,7 +64169,7 @@ func (c *RegionAutoscalersUpdateCall) Do(opts ...googleapi.CallOption) (*Operati
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -62575,8 +64210,17 @@ func (r *RegionBackendServicesService) Delete(project string, region string, bac
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionBackendServicesDeleteCall) RequestId(requestId string) *RegionBackendServicesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -62696,7 +64340,7 @@ func (c *RegionBackendServicesDeleteCall) Do(opts ...googleapi.CallOption) (*Ope
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -63058,8 +64702,17 @@ func (r *RegionBackendServicesService) Insert(project string, region string, bac
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionBackendServicesInsertCall) RequestId(requestId string) *RegionBackendServicesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -63175,7 +64828,7 @@ func (c *RegionBackendServicesInsertCall) Do(opts ...googleapi.CallOption) (*Ope
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -63216,10 +64869,9 @@ func (r *RegionBackendServicesService) List(project string, region string) *Regi
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -63231,7 +64883,7 @@ func (r *RegionBackendServicesService) List(project string, region string) *Regi
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -63388,7 +65040,7 @@ func (c *RegionBackendServicesListCall) Do(opts ...googleapi.CallOption) (*Backe
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -63486,8 +65138,17 @@ func (r *RegionBackendServicesService) Patch(project string, region string, back
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionBackendServicesPatchCall) RequestId(requestId string) *RegionBackendServicesPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -63612,7 +65273,7 @@ func (c *RegionBackendServicesPatchCall) Do(opts ...googleapi.CallOption) (*Oper
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -63818,8 +65479,17 @@ func (r *RegionBackendServicesService) Update(project string, region string, bac
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionBackendServicesUpdateCall) RequestId(requestId string) *RegionBackendServicesUpdateCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -63944,7 +65614,7 @@ func (c *RegionBackendServicesUpdateCall) Do(opts ...googleapi.CallOption) (*Ope
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -63982,10 +65652,9 @@ func (r *RegionCommitmentsService) AggregatedList(project string) *RegionCommitm
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -63997,7 +65666,7 @@ func (r *RegionCommitmentsService) AggregatedList(project string) *RegionCommitm
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -64152,7 +65821,7 @@ func (c *RegionCommitmentsAggregatedListCall) Do(opts ...googleapi.CallOption) (
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -64391,7 +66060,7 @@ type RegionCommitmentsInsertCall struct {
 	header_    http.Header
 }
 
-// Insert: Creates an commitment in the specified project using the data
+// Insert: Creates a commitment in the specified project using the data
 // included in the request.
 func (r *RegionCommitmentsService) Insert(project string, region string, commitment *Commitment) *RegionCommitmentsInsertCall {
 	c := &RegionCommitmentsInsertCall{s: r.s, urlParams_: make(gensupport.URLParams)}
@@ -64401,8 +66070,17 @@ func (r *RegionCommitmentsService) Insert(project string, region string, commitm
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionCommitmentsInsertCall) RequestId(requestId string) *RegionCommitmentsInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -64495,7 +66173,7 @@ func (c *RegionCommitmentsInsertCall) Do(opts ...googleapi.CallOption) (*Operati
 	}
 	return ret, nil
 	// {
-	//   "description": "Creates an commitment in the specified project using the data included in the request.",
+	//   "description": "Creates a commitment in the specified project using the data included in the request.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.regionCommitments.insert",
 	//   "parameterOrder": [
@@ -64518,7 +66196,7 @@ func (c *RegionCommitmentsInsertCall) Do(opts ...googleapi.CallOption) (*Operati
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -64559,10 +66237,9 @@ func (r *RegionCommitmentsService) List(project string, region string) *RegionCo
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -64574,7 +66251,7 @@ func (r *RegionCommitmentsService) List(project string, region string) *RegionCo
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -64731,7 +66408,7 @@ func (c *RegionCommitmentsListCall) Do(opts ...googleapi.CallOption) (*Commitmen
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -65145,10 +66822,9 @@ func (r *RegionDiskTypesService) List(project string, region string) *RegionDisk
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -65160,7 +66836,7 @@ func (r *RegionDiskTypesService) List(project string, region string) *RegionDisk
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -65317,7 +66993,7 @@ func (c *RegionDiskTypesListCall) Do(opts ...googleapi.CallOption) (*RegionDiskT
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -65417,8 +67093,17 @@ func (c *RegionDisksCreateSnapshotCall) GuestFlush(guestFlush bool) *RegionDisks
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionDisksCreateSnapshotCall) RequestId(requestId string) *RegionDisksCreateSnapshotCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -65547,7 +67232,7 @@ func (c *RegionDisksCreateSnapshotCall) Do(opts ...googleapi.CallOption) (*Opera
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -65591,8 +67276,17 @@ func (r *RegionDisksService) Delete(project string, region string, disk string) 
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionDisksDeleteCall) RequestId(requestId string) *RegionDisksDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -65711,7 +67405,7 @@ func (c *RegionDisksDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, er
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -65912,8 +67606,17 @@ func (r *RegionDisksService) Insert(project string, region string, disk *Disk) *
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionDisksInsertCall) RequestId(requestId string) *RegionDisksInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -66036,7 +67739,7 @@ func (c *RegionDisksInsertCall) Do(opts ...googleapi.CallOption) (*Operation, er
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -66082,10 +67785,9 @@ func (r *RegionDisksService) List(project string, region string) *RegionDisksLis
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -66097,7 +67799,7 @@ func (r *RegionDisksService) List(project string, region string) *RegionDisksLis
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -66254,7 +67956,7 @@ func (c *RegionDisksListCall) Do(opts ...googleapi.CallOption) (*DiskList, error
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -66348,8 +68050,17 @@ func (r *RegionDisksService) Resize(project string, region string, disk string, 
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionDisksResizeCall) RequestId(requestId string) *RegionDisksResizeCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -66474,7 +68185,7 @@ func (c *RegionDisksResizeCall) Do(opts ...googleapi.CallOption) (*Operation, er
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -66517,8 +68228,17 @@ func (r *RegionDisksService) SetLabels(project string, region string, resource s
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionDisksSetLabelsCall) RequestId(requestId string) *RegionDisksSetLabelsCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -66636,7 +68356,7 @@ func (c *RegionDisksSetLabelsCall) Do(opts ...googleapi.CallOption) (*Operation,
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -66845,6 +68565,11 @@ type RegionInstanceGroupManagersAbandonInstancesCall struct {
 // been removed from the group. You must separately verify the status of
 // the abandoning action with the listmanagedinstances method.
 //
+// If the group is part of a backend service that has enabled connection
+// draining, it can take up to 60 seconds after the connection draining
+// duration has elapsed before the VM instance is removed or
+// deleted.
+//
 // You can specify a maximum of 1000 instances with this method per
 // request.
 func (r *RegionInstanceGroupManagersService) AbandonInstances(project string, region string, instanceGroupManager string, regioninstancegroupmanagersabandoninstancesrequest *RegionInstanceGroupManagersAbandonInstancesRequest) *RegionInstanceGroupManagersAbandonInstancesCall {
@@ -66856,8 +68581,17 @@ func (r *RegionInstanceGroupManagersService) AbandonInstances(project string, re
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionInstanceGroupManagersAbandonInstancesCall) RequestId(requestId string) *RegionInstanceGroupManagersAbandonInstancesCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -66951,7 +68685,7 @@ func (c *RegionInstanceGroupManagersAbandonInstancesCall) Do(opts ...googleapi.C
 	}
 	return ret, nil
 	// {
-	//   "description": "Schedules a group action to remove the specified instances from the managed instance group. Abandoning an instance does not delete the instance, but it does remove the instance from any target pools that are applied by the managed instance group. This method reduces the targetSize of the managed instance group by the number of instances that you abandon. This operation is marked as DONE when the action is scheduled even if the instances have not yet been removed from the group. You must separately verify the status of the abandoning action with the listmanagedinstances method.\n\nYou can specify a maximum of 1000 instances with this method per request.",
+	//   "description": "Schedules a group action to remove the specified instances from the managed instance group. Abandoning an instance does not delete the instance, but it does remove the instance from any target pools that are applied by the managed instance group. This method reduces the targetSize of the managed instance group by the number of instances that you abandon. This operation is marked as DONE when the action is scheduled even if the instances have not yet been removed from the group. You must separately verify the status of the abandoning action with the listmanagedinstances method.\n\nIf the group is part of a backend service that has enabled connection draining, it can take up to 60 seconds after the connection draining duration has elapsed before the VM instance is removed or deleted.\n\nYou can specify a maximum of 1000 instances with this method per request.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.regionInstanceGroupManagers.abandonInstances",
 	//   "parameterOrder": [
@@ -66980,7 +68714,7 @@ func (c *RegionInstanceGroupManagersAbandonInstancesCall) Do(opts ...googleapi.C
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -67022,8 +68756,17 @@ func (r *RegionInstanceGroupManagersService) Delete(project string, region strin
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionInstanceGroupManagersDeleteCall) RequestId(requestId string) *RegionInstanceGroupManagersDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -67141,7 +68884,7 @@ func (c *RegionInstanceGroupManagersDeleteCall) Do(opts ...googleapi.CallOption)
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -67180,6 +68923,11 @@ type RegionInstanceGroupManagersDeleteInstancesCall struct {
 // deleted. You must separately verify the status of the deleting action
 // with the listmanagedinstances method.
 //
+// If the group is part of a backend service that has enabled connection
+// draining, it can take up to 60 seconds after the connection draining
+// duration has elapsed before the VM instance is removed or
+// deleted.
+//
 // You can specify a maximum of 1000 instances with this method per
 // request.
 func (r *RegionInstanceGroupManagersService) DeleteInstances(project string, region string, instanceGroupManager string, regioninstancegroupmanagersdeleteinstancesrequest *RegionInstanceGroupManagersDeleteInstancesRequest) *RegionInstanceGroupManagersDeleteInstancesCall {
@@ -67191,8 +68939,17 @@ func (r *RegionInstanceGroupManagersService) DeleteInstances(project string, reg
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionInstanceGroupManagersDeleteInstancesCall) RequestId(requestId string) *RegionInstanceGroupManagersDeleteInstancesCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -67286,7 +69043,7 @@ func (c *RegionInstanceGroupManagersDeleteInstancesCall) Do(opts ...googleapi.Ca
 	}
 	return ret, nil
 	// {
-	//   "description": "Schedules a group action to delete the specified instances in the managed instance group. The instances are also removed from any target pools of which they were a member. This method reduces the targetSize of the managed instance group by the number of instances that you delete. This operation is marked as DONE when the action is scheduled even if the instances are still being deleted. You must separately verify the status of the deleting action with the listmanagedinstances method.\n\nYou can specify a maximum of 1000 instances with this method per request.",
+	//   "description": "Schedules a group action to delete the specified instances in the managed instance group. The instances are also removed from any target pools of which they were a member. This method reduces the targetSize of the managed instance group by the number of instances that you delete. This operation is marked as DONE when the action is scheduled even if the instances are still being deleted. You must separately verify the status of the deleting action with the listmanagedinstances method.\n\nIf the group is part of a backend service that has enabled connection draining, it can take up to 60 seconds after the connection draining duration has elapsed before the VM instance is removed or deleted.\n\nYou can specify a maximum of 1000 instances with this method per request.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.regionInstanceGroupManagers.deleteInstances",
 	//   "parameterOrder": [
@@ -67315,7 +69072,7 @@ func (c *RegionInstanceGroupManagersDeleteInstancesCall) Do(opts ...googleapi.Ca
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -67525,8 +69282,17 @@ func (r *RegionInstanceGroupManagersService) Insert(project string, region strin
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionInstanceGroupManagersInsertCall) RequestId(requestId string) *RegionInstanceGroupManagersInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -67641,7 +69407,7 @@ func (c *RegionInstanceGroupManagersInsertCall) Do(opts ...googleapi.CallOption)
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -67682,10 +69448,9 @@ func (r *RegionInstanceGroupManagersService) List(project string, region string)
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -67697,7 +69462,7 @@ func (r *RegionInstanceGroupManagersService) List(project string, region string)
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -67854,7 +69619,7 @@ func (c *RegionInstanceGroupManagersListCall) Do(opts ...googleapi.CallOption) (
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -68167,8 +69932,17 @@ func (r *RegionInstanceGroupManagersService) Patch(project string, region string
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionInstanceGroupManagersPatchCall) RequestId(requestId string) *RegionInstanceGroupManagersPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -68291,7 +70065,7 @@ func (c *RegionInstanceGroupManagersPatchCall) Do(opts ...googleapi.CallOption) 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -68333,6 +70107,11 @@ type RegionInstanceGroupManagersRecreateInstancesCall struct {
 // separately verify the status of the recreating action with the
 // listmanagedinstances method.
 //
+// If the group is part of a backend service that has enabled connection
+// draining, it can take up to 60 seconds after the connection draining
+// duration has elapsed before the VM instance is removed or
+// deleted.
+//
 // You can specify a maximum of 1000 instances with this method per
 // request.
 func (r *RegionInstanceGroupManagersService) RecreateInstances(project string, region string, instanceGroupManager string, regioninstancegroupmanagersrecreaterequest *RegionInstanceGroupManagersRecreateRequest) *RegionInstanceGroupManagersRecreateInstancesCall {
@@ -68344,8 +70123,17 @@ func (r *RegionInstanceGroupManagersService) RecreateInstances(project string, r
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionInstanceGroupManagersRecreateInstancesCall) RequestId(requestId string) *RegionInstanceGroupManagersRecreateInstancesCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -68439,7 +70227,7 @@ func (c *RegionInstanceGroupManagersRecreateInstancesCall) Do(opts ...googleapi.
 	}
 	return ret, nil
 	// {
-	//   "description": "Schedules a group action to recreate the specified instances in the managed instance group. The instances are deleted and recreated using the current instance template for the managed instance group. This operation is marked as DONE when the action is scheduled even if the instances have not yet been recreated. You must separately verify the status of the recreating action with the listmanagedinstances method.\n\nYou can specify a maximum of 1000 instances with this method per request.",
+	//   "description": "Schedules a group action to recreate the specified instances in the managed instance group. The instances are deleted and recreated using the current instance template for the managed instance group. This operation is marked as DONE when the action is scheduled even if the instances have not yet been recreated. You must separately verify the status of the recreating action with the listmanagedinstances method.\n\nIf the group is part of a backend service that has enabled connection draining, it can take up to 60 seconds after the connection draining duration has elapsed before the VM instance is removed or deleted.\n\nYou can specify a maximum of 1000 instances with this method per request.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.regionInstanceGroupManagers.recreateInstances",
 	//   "parameterOrder": [
@@ -68468,7 +70256,7 @@ func (c *RegionInstanceGroupManagersRecreateInstancesCall) Do(opts ...googleapi.
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -68508,6 +70296,10 @@ type RegionInstanceGroupManagersResizeCall struct {
 // scheduled even if the group has not yet added or deleted any
 // instances. You must separately verify the status of the creating or
 // deleting actions with the listmanagedinstances method.
+//
+// If the group is part of a backend service that has enabled connection
+// draining, it can take up to 60 seconds after the connection draining
+// duration has elapsed before the VM instance is removed or deleted.
 func (r *RegionInstanceGroupManagersService) Resize(project string, region string, instanceGroupManager string, size int64) *RegionInstanceGroupManagersResizeCall {
 	c := &RegionInstanceGroupManagersResizeCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.project = project
@@ -68517,8 +70309,17 @@ func (r *RegionInstanceGroupManagersService) Resize(project string, region strin
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionInstanceGroupManagersResizeCall) RequestId(requestId string) *RegionInstanceGroupManagersResizeCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -68607,7 +70408,7 @@ func (c *RegionInstanceGroupManagersResizeCall) Do(opts ...googleapi.CallOption)
 	}
 	return ret, nil
 	// {
-	//   "description": "Changes the intended size for the managed instance group. If you increase the size, the group schedules actions to create new instances using the current instance template. If you decrease the size, the group schedules delete actions on one or more instances. The resize operation is marked DONE when the resize actions are scheduled even if the group has not yet added or deleted any instances. You must separately verify the status of the creating or deleting actions with the listmanagedinstances method.",
+	//   "description": "Changes the intended size for the managed instance group. If you increase the size, the group schedules actions to create new instances using the current instance template. If you decrease the size, the group schedules delete actions on one or more instances. The resize operation is marked DONE when the resize actions are scheduled even if the group has not yet added or deleted any instances. You must separately verify the status of the creating or deleting actions with the listmanagedinstances method.\n\nIf the group is part of a backend service that has enabled connection draining, it can take up to 60 seconds after the connection draining duration has elapsed before the VM instance is removed or deleted.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.regionInstanceGroupManagers.resize",
 	//   "parameterOrder": [
@@ -68637,7 +70438,7 @@ func (c *RegionInstanceGroupManagersResizeCall) Do(opts ...googleapi.CallOption)
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -68686,8 +70487,17 @@ func (r *RegionInstanceGroupManagersService) SetAutoHealingPolicies(project stri
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionInstanceGroupManagersSetAutoHealingPoliciesCall) RequestId(requestId string) *RegionInstanceGroupManagersSetAutoHealingPoliciesCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -68810,7 +70620,7 @@ func (c *RegionInstanceGroupManagersSetAutoHealingPoliciesCall) Do(opts ...googl
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -68855,8 +70665,17 @@ func (r *RegionInstanceGroupManagersService) SetInstanceTemplate(project string,
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionInstanceGroupManagersSetInstanceTemplateCall) RequestId(requestId string) *RegionInstanceGroupManagersSetInstanceTemplateCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -68979,7 +70798,7 @@ func (c *RegionInstanceGroupManagersSetInstanceTemplateCall) Do(opts ...googleap
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -69024,8 +70843,17 @@ func (r *RegionInstanceGroupManagersService) SetTargetPools(project string, regi
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionInstanceGroupManagersSetTargetPoolsCall) RequestId(requestId string) *RegionInstanceGroupManagersSetTargetPoolsCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -69148,7 +70976,7 @@ func (c *RegionInstanceGroupManagersSetTargetPoolsCall) Do(opts ...googleapi.Cal
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -69354,8 +71182,17 @@ func (r *RegionInstanceGroupManagersService) Update(project string, region strin
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionInstanceGroupManagersUpdateCall) RequestId(requestId string) *RegionInstanceGroupManagersUpdateCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -69478,7 +71315,7 @@ func (c *RegionInstanceGroupManagersUpdateCall) Do(opts ...googleapi.CallOption)
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -69679,10 +71516,9 @@ func (r *RegionInstanceGroupsService) List(project string, region string) *Regio
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -69694,7 +71530,7 @@ func (r *RegionInstanceGroupsService) List(project string, region string) *Regio
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -69851,7 +71687,7 @@ func (c *RegionInstanceGroupsListCall) Do(opts ...googleapi.CallOption) (*Region
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -69947,10 +71783,9 @@ func (r *RegionInstanceGroupsService) ListInstances(project string, region strin
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -69962,7 +71797,7 @@ func (r *RegionInstanceGroupsService) ListInstances(project string, region strin
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -70114,7 +71949,7 @@ func (c *RegionInstanceGroupsListInstancesCall) Do(opts ...googleapi.CallOption)
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -70217,8 +72052,17 @@ func (r *RegionInstanceGroupsService) SetNamedPorts(project string, region strin
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RegionInstanceGroupsSetNamedPortsCall) RequestId(requestId string) *RegionInstanceGroupsSetNamedPortsCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -70341,7 +72185,7 @@ func (c *RegionInstanceGroupsSetNamedPortsCall) Do(opts ...googleapi.CallOption)
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -70825,10 +72669,9 @@ func (r *RegionOperationsService) List(project string, region string) *RegionOpe
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -70840,7 +72683,7 @@ func (r *RegionOperationsService) List(project string, region string) *RegionOpe
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -70997,7 +72840,7 @@ func (c *RegionOperationsListCall) Do(opts ...googleapi.CallOption) (*OperationL
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -71241,10 +73084,9 @@ func (r *RegionsService) List(project string) *RegionsListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -71256,7 +73098,7 @@ func (r *RegionsService) List(project string) *RegionsListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -71411,7 +73253,7 @@ func (c *RegionsListCall) Do(opts ...googleapi.CallOption) (*RegionList, error) 
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -71493,10 +73335,9 @@ func (r *RoutersService) AggregatedList(project string) *RoutersAggregatedListCa
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -71508,7 +73349,7 @@ func (r *RoutersService) AggregatedList(project string) *RoutersAggregatedListCa
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -71663,7 +73504,7 @@ func (c *RoutersAggregatedListCall) Do(opts ...googleapi.CallOption) (*RouterAgg
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -71748,8 +73589,17 @@ func (r *RoutersService) Delete(project string, region string, router string) *R
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RoutersDeleteCall) RequestId(requestId string) *RoutersDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -71862,7 +73712,7 @@ func (c *RoutersDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, error)
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -72234,8 +74084,17 @@ func (r *RoutersService) Insert(project string, region string, router *Router) *
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RoutersInsertCall) RequestId(requestId string) *RoutersInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -72351,7 +74210,7 @@ func (c *RoutersInsertCall) Do(opts ...googleapi.CallOption) (*Operation, error)
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -72392,10 +74251,9 @@ func (r *RoutersService) List(project string, region string) *RoutersListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -72407,7 +74265,7 @@ func (r *RoutersService) List(project string, region string) *RoutersListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -72564,7 +74422,7 @@ func (c *RoutersListCall) Do(opts ...googleapi.CallOption) (*RouterList, error) 
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -72659,8 +74517,17 @@ func (r *RoutersService) Patch(project string, region string, router string, rou
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RoutersPatchCall) RequestId(requestId string) *RoutersPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -72778,7 +74645,7 @@ func (c *RoutersPatchCall) Do(opts ...googleapi.CallOption) (*Operation, error) 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -73149,8 +75016,17 @@ func (r *RoutersService) Update(project string, region string, router string, ro
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RoutersUpdateCall) RequestId(requestId string) *RoutersUpdateCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -73268,7 +75144,7 @@ func (c *RoutersUpdateCall) Do(opts ...googleapi.CallOption) (*Operation, error)
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -73315,8 +75191,17 @@ func (r *RoutesService) Delete(project string, route string) *RoutesDeleteCall {
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RoutesDeleteCall) RequestId(requestId string) *RoutesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -73420,7 +75305,7 @@ func (c *RoutesDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, error) 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -73618,8 +75503,17 @@ func (r *RoutesService) Insert(project string, route *Route) *RoutesInsertCall {
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *RoutesInsertCall) RequestId(requestId string) *RoutesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -73726,7 +75620,7 @@ func (c *RoutesInsertCall) Do(opts ...googleapi.CallOption) (*Operation, error) 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -73766,10 +75660,9 @@ func (r *RoutesService) List(project string) *RoutesListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -73781,7 +75674,7 @@ func (r *RoutesService) List(project string) *RoutesListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -73936,7 +75829,7 @@ func (c *RoutesListCall) Do(opts ...googleapi.CallOption) (*RouteList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -74167,8 +76060,17 @@ func (r *SecurityPoliciesService) Delete(project string, securityPolicy string) 
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *SecurityPoliciesDeleteCall) RequestId(requestId string) *SecurityPoliciesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -74272,7 +76174,7 @@ func (c *SecurityPoliciesDeleteCall) Do(opts ...googleapi.CallOption) (*Operatio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -74468,8 +76370,17 @@ func (r *SecurityPoliciesService) Insert(project string, securitypolicy *Securit
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *SecurityPoliciesInsertCall) RequestId(requestId string) *SecurityPoliciesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -74576,7 +76487,7 @@ func (c *SecurityPoliciesInsertCall) Do(opts ...googleapi.CallOption) (*Operatio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -74615,10 +76526,9 @@ func (r *SecurityPoliciesService) List(project string) *SecurityPoliciesListCall
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -74630,7 +76540,7 @@ func (r *SecurityPoliciesService) List(project string) *SecurityPoliciesListCall
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -74785,7 +76695,7 @@ func (c *SecurityPoliciesListCall) Do(opts ...googleapi.CallOption) (*SecurityPo
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -74871,8 +76781,17 @@ func (r *SecurityPoliciesService) Patch(project string, securityPolicy string, s
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *SecurityPoliciesPatchCall) RequestId(requestId string) *SecurityPoliciesPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -74981,7 +76900,7 @@ func (c *SecurityPoliciesPatchCall) Do(opts ...googleapi.CallOption) (*Operation
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -75183,8 +77102,17 @@ func (r *SnapshotsService) Delete(project string, snapshot string) *SnapshotsDel
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *SnapshotsDeleteCall) RequestId(requestId string) *SnapshotsDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -75288,7 +77216,7 @@ func (c *SnapshotsDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, erro
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -75637,10 +77565,9 @@ func (r *SnapshotsService) List(project string) *SnapshotsListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -75652,7 +77579,7 @@ func (r *SnapshotsService) List(project string) *SnapshotsListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -75807,7 +77734,7 @@ func (c *SnapshotsListCall) Do(opts ...googleapi.CallOption) (*SnapshotList, err
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -76031,7 +77958,7 @@ type SnapshotsSetLabelsCall struct {
 }
 
 // SetLabels: Sets the labels on a snapshot. To learn more about labels,
-// read the Labeling or Tagging Resources documentation.
+// read the Labeling Resources documentation.
 func (r *SnapshotsService) SetLabels(project string, resource string, globalsetlabelsrequest *GlobalSetLabelsRequest) *SnapshotsSetLabelsCall {
 	c := &SnapshotsSetLabelsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.project = project
@@ -76127,7 +78054,7 @@ func (c *SnapshotsSetLabelsCall) Do(opts ...googleapi.CallOption) (*Operation, e
 	}
 	return ret, nil
 	// {
-	//   "description": "Sets the labels on a snapshot. To learn more about labels, read the Labeling or Tagging Resources documentation.",
+	//   "description": "Sets the labels on a snapshot. To learn more about labels, read the Labeling Resources documentation.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.snapshots.setLabels",
 	//   "parameterOrder": [
@@ -76332,8 +78259,17 @@ func (r *SslCertificatesService) Delete(project string, sslCertificate string) *
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *SslCertificatesDeleteCall) RequestId(requestId string) *SslCertificatesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -76437,7 +78373,7 @@ func (c *SslCertificatesDeleteCall) Do(opts ...googleapi.CallOption) (*Operation
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -76633,8 +78569,17 @@ func (r *SslCertificatesService) Insert(project string, sslcertificate *SslCerti
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *SslCertificatesInsertCall) RequestId(requestId string) *SslCertificatesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -76741,7 +78686,7 @@ func (c *SslCertificatesInsertCall) Do(opts ...googleapi.CallOption) (*Operation
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -76780,10 +78725,9 @@ func (r *SslCertificatesService) List(project string) *SslCertificatesListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -76795,7 +78739,7 @@ func (r *SslCertificatesService) List(project string) *SslCertificatesListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -76950,7 +78894,7 @@ func (c *SslCertificatesListCall) Do(opts ...googleapi.CallOption) (*SslCertific
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -77180,10 +79124,9 @@ func (r *SubnetworksService) AggregatedList(project string) *SubnetworksAggregat
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -77195,7 +79138,7 @@ func (r *SubnetworksService) AggregatedList(project string) *SubnetworksAggregat
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -77350,7 +79293,7 @@ func (c *SubnetworksAggregatedListCall) Do(opts ...googleapi.CallOption) (*Subne
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -77435,8 +79378,17 @@ func (r *SubnetworksService) Delete(project string, region string, subnetwork st
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *SubnetworksDeleteCall) RequestId(requestId string) *SubnetworksDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -77549,7 +79501,7 @@ func (c *SubnetworksDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, er
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -77597,8 +79549,17 @@ func (r *SubnetworksService) ExpandIpCidrRange(project string, region string, su
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *SubnetworksExpandIpCidrRangeCall) RequestId(requestId string) *SubnetworksExpandIpCidrRangeCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -77716,7 +79677,7 @@ func (c *SubnetworksExpandIpCidrRangeCall) Do(opts ...googleapi.CallOption) (*Op
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -78091,8 +80052,17 @@ func (r *SubnetworksService) Insert(project string, region string, subnetwork *S
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *SubnetworksInsertCall) RequestId(requestId string) *SubnetworksInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -78208,7 +80178,7 @@ func (c *SubnetworksInsertCall) Do(opts ...googleapi.CallOption) (*Operation, er
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -78249,10 +80219,9 @@ func (r *SubnetworksService) List(project string, region string) *SubnetworksLis
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -78264,7 +80233,7 @@ func (r *SubnetworksService) List(project string, region string) *SubnetworksLis
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -78421,7 +80390,7 @@ func (c *SubnetworksListCall) Do(opts ...googleapi.CallOption) (*SubnetworkList,
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -78675,8 +80644,17 @@ func (r *SubnetworksService) SetPrivateIpGoogleAccess(project string, region str
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *SubnetworksSetPrivateIpGoogleAccessCall) RequestId(requestId string) *SubnetworksSetPrivateIpGoogleAccessCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -78794,7 +80772,7 @@ func (c *SubnetworksSetPrivateIpGoogleAccessCall) Do(opts ...googleapi.CallOptio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -79000,8 +80978,17 @@ func (r *TargetHttpProxiesService) Delete(project string, targetHttpProxy string
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetHttpProxiesDeleteCall) RequestId(requestId string) *TargetHttpProxiesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -79105,7 +81092,7 @@ func (c *TargetHttpProxiesDeleteCall) Do(opts ...googleapi.CallOption) (*Operati
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -79303,8 +81290,17 @@ func (r *TargetHttpProxiesService) Insert(project string, targethttpproxy *Targe
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetHttpProxiesInsertCall) RequestId(requestId string) *TargetHttpProxiesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -79411,7 +81407,7 @@ func (c *TargetHttpProxiesInsertCall) Do(opts ...googleapi.CallOption) (*Operati
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -79451,10 +81447,9 @@ func (r *TargetHttpProxiesService) List(project string) *TargetHttpProxiesListCa
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -79466,7 +81461,7 @@ func (r *TargetHttpProxiesService) List(project string) *TargetHttpProxiesListCa
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -79621,7 +81616,7 @@ func (c *TargetHttpProxiesListCall) Do(opts ...googleapi.CallOption) (*TargetHtt
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -79707,8 +81702,17 @@ func (r *TargetHttpProxiesService) SetUrlMap(project string, targetHttpProxy str
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetHttpProxiesSetUrlMapCall) RequestId(requestId string) *TargetHttpProxiesSetUrlMapCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -79817,7 +81821,7 @@ func (c *TargetHttpProxiesSetUrlMapCall) Do(opts ...googleapi.CallOption) (*Oper
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -80011,8 +82015,17 @@ func (r *TargetHttpsProxiesService) Delete(project string, targetHttpsProxy stri
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetHttpsProxiesDeleteCall) RequestId(requestId string) *TargetHttpsProxiesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -80116,7 +82129,7 @@ func (c *TargetHttpsProxiesDeleteCall) Do(opts ...googleapi.CallOption) (*Operat
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -80312,8 +82325,17 @@ func (r *TargetHttpsProxiesService) Insert(project string, targethttpsproxy *Tar
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetHttpsProxiesInsertCall) RequestId(requestId string) *TargetHttpsProxiesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -80420,7 +82442,7 @@ func (c *TargetHttpsProxiesInsertCall) Do(opts ...googleapi.CallOption) (*Operat
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -80459,10 +82481,9 @@ func (r *TargetHttpsProxiesService) List(project string) *TargetHttpsProxiesList
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -80474,7 +82495,7 @@ func (r *TargetHttpsProxiesService) List(project string) *TargetHttpsProxiesList
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -80629,7 +82650,7 @@ func (c *TargetHttpsProxiesListCall) Do(opts ...googleapi.CallOption) (*TargetHt
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -80714,8 +82735,17 @@ func (r *TargetHttpsProxiesService) SetSslCertificates(project string, targetHtt
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetHttpsProxiesSetSslCertificatesCall) RequestId(requestId string) *TargetHttpsProxiesSetSslCertificatesCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -80824,7 +82854,7 @@ func (c *TargetHttpsProxiesSetSslCertificatesCall) Do(opts ...googleapi.CallOpti
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -80872,8 +82902,17 @@ func (r *TargetHttpsProxiesService) SetUrlMap(project string, targetHttpsProxy s
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetHttpsProxiesSetUrlMapCall) RequestId(requestId string) *TargetHttpsProxiesSetUrlMapCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -80982,7 +83021,7 @@ func (c *TargetHttpsProxiesSetUrlMapCall) Do(opts ...googleapi.CallOption) (*Ope
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -81176,10 +83215,9 @@ func (r *TargetInstancesService) AggregatedList(project string) *TargetInstances
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -81191,7 +83229,7 @@ func (r *TargetInstancesService) AggregatedList(project string) *TargetInstances
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -81346,7 +83384,7 @@ func (c *TargetInstancesAggregatedListCall) Do(opts ...googleapi.CallOption) (*T
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -81432,8 +83470,17 @@ func (r *TargetInstancesService) Delete(project string, zone string, targetInsta
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetInstancesDeleteCall) RequestId(requestId string) *TargetInstancesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -81539,7 +83586,7 @@ func (c *TargetInstancesDeleteCall) Do(opts ...googleapi.CallOption) (*Operation
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -81757,8 +83804,17 @@ func (r *TargetInstancesService) Insert(project string, zone string, targetinsta
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetInstancesInsertCall) RequestId(requestId string) *TargetInstancesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -81867,7 +83923,7 @@ func (c *TargetInstancesInsertCall) Do(opts ...googleapi.CallOption) (*Operation
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -81916,10 +83972,9 @@ func (r *TargetInstancesService) List(project string, zone string) *TargetInstan
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -81931,7 +83986,7 @@ func (r *TargetInstancesService) List(project string, zone string) *TargetInstan
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -82088,7 +84143,7 @@ func (c *TargetInstancesListCall) Do(opts ...googleapi.CallOption) (*TargetInsta
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -82342,8 +84397,17 @@ func (r *TargetPoolsService) AddHealthCheck(project string, region string, targe
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetPoolsAddHealthCheckCall) RequestId(requestId string) *TargetPoolsAddHealthCheckCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -82461,7 +84525,7 @@ func (c *TargetPoolsAddHealthCheckCall) Do(opts ...googleapi.CallOption) (*Opera
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -82512,8 +84576,17 @@ func (r *TargetPoolsService) AddInstance(project string, region string, targetPo
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetPoolsAddInstanceCall) RequestId(requestId string) *TargetPoolsAddInstanceCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -82631,7 +84704,7 @@ func (c *TargetPoolsAddInstanceCall) Do(opts ...googleapi.CallOption) (*Operatio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -82677,10 +84750,9 @@ func (r *TargetPoolsService) AggregatedList(project string) *TargetPoolsAggregat
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -82692,7 +84764,7 @@ func (r *TargetPoolsService) AggregatedList(project string) *TargetPoolsAggregat
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -82847,7 +84919,7 @@ func (c *TargetPoolsAggregatedListCall) Do(opts ...googleapi.CallOption) (*Targe
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -82933,8 +85005,17 @@ func (r *TargetPoolsService) Delete(project string, region string, targetPool st
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetPoolsDeleteCall) RequestId(requestId string) *TargetPoolsDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -83047,7 +85128,7 @@ func (c *TargetPoolsDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, er
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -83418,8 +85499,17 @@ func (r *TargetPoolsService) Insert(project string, region string, targetpool *T
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetPoolsInsertCall) RequestId(requestId string) *TargetPoolsInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -83535,7 +85625,7 @@ func (c *TargetPoolsInsertCall) Do(opts ...googleapi.CallOption) (*Operation, er
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -83577,10 +85667,9 @@ func (r *TargetPoolsService) List(project string, region string) *TargetPoolsLis
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -83592,7 +85681,7 @@ func (r *TargetPoolsService) List(project string, region string) *TargetPoolsLis
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -83749,7 +85838,7 @@ func (c *TargetPoolsListCall) Do(opts ...googleapi.CallOption) (*TargetPoolList,
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -83844,8 +85933,17 @@ func (r *TargetPoolsService) RemoveHealthCheck(project string, region string, ta
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetPoolsRemoveHealthCheckCall) RequestId(requestId string) *TargetPoolsRemoveHealthCheckCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -83963,7 +86061,7 @@ func (c *TargetPoolsRemoveHealthCheckCall) Do(opts ...googleapi.CallOption) (*Op
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -84014,8 +86112,17 @@ func (r *TargetPoolsService) RemoveInstance(project string, region string, targe
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetPoolsRemoveInstanceCall) RequestId(requestId string) *TargetPoolsRemoveInstanceCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -84133,7 +86240,7 @@ func (c *TargetPoolsRemoveInstanceCall) Do(opts ...googleapi.CallOption) (*Opera
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -84191,8 +86298,17 @@ func (c *TargetPoolsSetBackupCall) FailoverRatio(failoverRatio float64) *TargetP
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetPoolsSetBackupCall) RequestId(requestId string) *TargetPoolsSetBackupCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -84316,7 +86432,7 @@ func (c *TargetPoolsSetBackupCall) Do(opts ...googleapi.CallOption) (*Operation,
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -84521,8 +86637,17 @@ func (r *TargetSslProxiesService) Delete(project string, targetSslProxy string) 
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetSslProxiesDeleteCall) RequestId(requestId string) *TargetSslProxiesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -84626,7 +86751,7 @@ func (c *TargetSslProxiesDeleteCall) Do(opts ...googleapi.CallOption) (*Operatio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -84822,8 +86947,17 @@ func (r *TargetSslProxiesService) Insert(project string, targetsslproxy *TargetS
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetSslProxiesInsertCall) RequestId(requestId string) *TargetSslProxiesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -84930,7 +87064,7 @@ func (c *TargetSslProxiesInsertCall) Do(opts ...googleapi.CallOption) (*Operatio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -84969,10 +87103,9 @@ func (r *TargetSslProxiesService) List(project string) *TargetSslProxiesListCall
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -84984,7 +87117,7 @@ func (r *TargetSslProxiesService) List(project string) *TargetSslProxiesListCall
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -85139,7 +87272,7 @@ func (c *TargetSslProxiesListCall) Do(opts ...googleapi.CallOption) (*TargetSslP
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -85224,8 +87357,17 @@ func (r *TargetSslProxiesService) SetBackendService(project string, targetSslPro
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetSslProxiesSetBackendServiceCall) RequestId(requestId string) *TargetSslProxiesSetBackendServiceCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -85334,7 +87476,7 @@ func (c *TargetSslProxiesSetBackendServiceCall) Do(opts ...googleapi.CallOption)
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -85382,8 +87524,17 @@ func (r *TargetSslProxiesService) SetProxyHeader(project string, targetSslProxy 
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetSslProxiesSetProxyHeaderCall) RequestId(requestId string) *TargetSslProxiesSetProxyHeaderCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -85492,7 +87643,7 @@ func (c *TargetSslProxiesSetProxyHeaderCall) Do(opts ...googleapi.CallOption) (*
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -85540,8 +87691,17 @@ func (r *TargetSslProxiesService) SetSslCertificates(project string, targetSslPr
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetSslProxiesSetSslCertificatesCall) RequestId(requestId string) *TargetSslProxiesSetSslCertificatesCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -85650,7 +87810,7 @@ func (c *TargetSslProxiesSetSslCertificatesCall) Do(opts ...googleapi.CallOption
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -85844,8 +88004,17 @@ func (r *TargetTcpProxiesService) Delete(project string, targetTcpProxy string) 
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetTcpProxiesDeleteCall) RequestId(requestId string) *TargetTcpProxiesDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -85949,7 +88118,7 @@ func (c *TargetTcpProxiesDeleteCall) Do(opts ...googleapi.CallOption) (*Operatio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -86145,8 +88314,17 @@ func (r *TargetTcpProxiesService) Insert(project string, targettcpproxy *TargetT
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetTcpProxiesInsertCall) RequestId(requestId string) *TargetTcpProxiesInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -86253,7 +88431,7 @@ func (c *TargetTcpProxiesInsertCall) Do(opts ...googleapi.CallOption) (*Operatio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -86292,10 +88470,9 @@ func (r *TargetTcpProxiesService) List(project string) *TargetTcpProxiesListCall
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -86307,7 +88484,7 @@ func (r *TargetTcpProxiesService) List(project string) *TargetTcpProxiesListCall
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -86462,7 +88639,7 @@ func (c *TargetTcpProxiesListCall) Do(opts ...googleapi.CallOption) (*TargetTcpP
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -86547,8 +88724,17 @@ func (r *TargetTcpProxiesService) SetBackendService(project string, targetTcpPro
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetTcpProxiesSetBackendServiceCall) RequestId(requestId string) *TargetTcpProxiesSetBackendServiceCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -86657,7 +88843,7 @@ func (c *TargetTcpProxiesSetBackendServiceCall) Do(opts ...googleapi.CallOption)
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -86705,8 +88891,17 @@ func (r *TargetTcpProxiesService) SetProxyHeader(project string, targetTcpProxy 
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetTcpProxiesSetProxyHeaderCall) RequestId(requestId string) *TargetTcpProxiesSetProxyHeaderCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -86815,7 +89010,7 @@ func (c *TargetTcpProxiesSetProxyHeaderCall) Do(opts ...googleapi.CallOption) (*
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -87008,10 +89203,9 @@ func (r *TargetVpnGatewaysService) AggregatedList(project string) *TargetVpnGate
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -87023,7 +89217,7 @@ func (r *TargetVpnGatewaysService) AggregatedList(project string) *TargetVpnGate
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -87178,7 +89372,7 @@ func (c *TargetVpnGatewaysAggregatedListCall) Do(opts ...googleapi.CallOption) (
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -87263,8 +89457,17 @@ func (r *TargetVpnGatewaysService) Delete(project string, region string, targetV
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetVpnGatewaysDeleteCall) RequestId(requestId string) *TargetVpnGatewaysDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -87377,7 +89580,7 @@ func (c *TargetVpnGatewaysDeleteCall) Do(opts ...googleapi.CallOption) (*Operati
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -87586,8 +89789,17 @@ func (r *TargetVpnGatewaysService) Insert(project string, region string, targetv
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *TargetVpnGatewaysInsertCall) RequestId(requestId string) *TargetVpnGatewaysInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -87703,7 +89915,7 @@ func (c *TargetVpnGatewaysInsertCall) Do(opts ...googleapi.CallOption) (*Operati
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -87744,10 +89956,9 @@ func (r *TargetVpnGatewaysService) List(project string, region string) *TargetVp
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -87759,7 +89970,7 @@ func (r *TargetVpnGatewaysService) List(project string, region string) *TargetVp
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -87916,7 +90127,7 @@ func (c *TargetVpnGatewaysListCall) Do(opts ...googleapi.CallOption) (*TargetVpn
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -88166,8 +90377,17 @@ func (r *UrlMapsService) Delete(project string, urlMap string) *UrlMapsDeleteCal
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *UrlMapsDeleteCall) RequestId(requestId string) *UrlMapsDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -88271,7 +90491,7 @@ func (c *UrlMapsDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, error)
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -88469,8 +90689,17 @@ func (r *UrlMapsService) Insert(project string, urlmap *UrlMap) *UrlMapsInsertCa
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *UrlMapsInsertCall) RequestId(requestId string) *UrlMapsInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -88577,7 +90806,7 @@ func (c *UrlMapsInsertCall) Do(opts ...googleapi.CallOption) (*Operation, error)
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -88619,8 +90848,17 @@ func (r *UrlMapsService) InvalidateCache(project string, urlMap string, cacheinv
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *UrlMapsInvalidateCacheCall) RequestId(requestId string) *UrlMapsInvalidateCacheCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -88729,7 +90967,7 @@ func (c *UrlMapsInvalidateCacheCall) Do(opts ...googleapi.CallOption) (*Operatio
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -88776,10 +91014,9 @@ func (r *UrlMapsService) List(project string) *UrlMapsListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -88791,7 +91028,7 @@ func (r *UrlMapsService) List(project string) *UrlMapsListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -88946,7 +91183,7 @@ func (c *UrlMapsListCall) Do(opts ...googleapi.CallOption) (*UrlMapList, error) 
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -89033,8 +91270,17 @@ func (r *UrlMapsService) Patch(project string, urlMap string, urlmap *UrlMap) *U
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *UrlMapsPatchCall) RequestId(requestId string) *UrlMapsPatchCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -89143,7 +91389,7 @@ func (c *UrlMapsPatchCall) Do(opts ...googleapi.CallOption) (*Operation, error) 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -89342,8 +91588,17 @@ func (r *UrlMapsService) Update(project string, urlMap string, urlmap *UrlMap) *
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *UrlMapsUpdateCall) RequestId(requestId string) *UrlMapsUpdateCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -89452,7 +91707,7 @@ func (c *UrlMapsUpdateCall) Do(opts ...googleapi.CallOption) (*Operation, error)
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -89646,10 +91901,9 @@ func (r *VpnTunnelsService) AggregatedList(project string) *VpnTunnelsAggregated
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -89661,7 +91915,7 @@ func (r *VpnTunnelsService) AggregatedList(project string) *VpnTunnelsAggregated
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -89816,7 +92070,7 @@ func (c *VpnTunnelsAggregatedListCall) Do(opts ...googleapi.CallOption) (*VpnTun
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -89901,8 +92155,17 @@ func (r *VpnTunnelsService) Delete(project string, region string, vpnTunnel stri
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *VpnTunnelsDeleteCall) RequestId(requestId string) *VpnTunnelsDeleteCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -90015,7 +92278,7 @@ func (c *VpnTunnelsDeleteCall) Do(opts ...googleapi.CallOption) (*Operation, err
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -90224,8 +92487,17 @@ func (r *VpnTunnelsService) Insert(project string, region string, vpntunnel *Vpn
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *VpnTunnelsInsertCall) RequestId(requestId string) *VpnTunnelsInsertCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -90341,7 +92613,7 @@ func (c *VpnTunnelsInsertCall) Do(opts ...googleapi.CallOption) (*Operation, err
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     }
@@ -90382,10 +92654,9 @@ func (r *VpnTunnelsService) List(project string, region string) *VpnTunnelsListC
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -90397,7 +92668,7 @@ func (r *VpnTunnelsService) List(project string, region string) *VpnTunnelsListC
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -90554,7 +92825,7 @@ func (c *VpnTunnelsListCall) Do(opts ...googleapi.CallOption) (*VpnTunnelList, e
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -90639,7 +92910,7 @@ type VpnTunnelsSetLabelsCall struct {
 }
 
 // SetLabels: Sets the labels on a VpnTunnel. To learn more about
-// labels, read the Labeling or Tagging Resources documentation.
+// labels, read the Labeling Resources documentation.
 func (r *VpnTunnelsService) SetLabels(project string, region string, resource string, regionsetlabelsrequest *RegionSetLabelsRequest) *VpnTunnelsSetLabelsCall {
 	c := &VpnTunnelsSetLabelsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.project = project
@@ -90649,8 +92920,17 @@ func (r *VpnTunnelsService) SetLabels(project string, region string, resource st
 	return c
 }
 
-// RequestId sets the optional parameter "requestId": begin_interface:
-// MixerMutationRequestBuilder Request ID to support idempotency.
+// RequestId sets the optional parameter "requestId": An optional
+// request ID to identify requests. Specify a unique request ID so that
+// if you must retry your request, the server will know to ignore the
+// request if it has already been completed.
+//
+// For example, consider a situation where you make an initial request
+// and then the request times out. If you make the request again with
+// the same request ID, the server can check if original operation with
+// the same request ID was received, and if so, will ignore the second
+// request. This prevents clients from accidentally creating duplicate
+// commitments.
 func (c *VpnTunnelsSetLabelsCall) RequestId(requestId string) *VpnTunnelsSetLabelsCall {
 	c.urlParams_.Set("requestId", requestId)
 	return c
@@ -90744,7 +93024,7 @@ func (c *VpnTunnelsSetLabelsCall) Do(opts ...googleapi.CallOption) (*Operation, 
 	}
 	return ret, nil
 	// {
-	//   "description": "Sets the labels on a VpnTunnel. To learn more about labels, read the Labeling or Tagging Resources documentation.",
+	//   "description": "Sets the labels on a VpnTunnel. To learn more about labels, read the Labeling Resources documentation.",
 	//   "httpMethod": "POST",
 	//   "id": "compute.vpnTunnels.setLabels",
 	//   "parameterOrder": [
@@ -90768,7 +93048,7 @@ func (c *VpnTunnelsSetLabelsCall) Do(opts ...googleapi.CallOption) (*Operation, 
 	//       "type": "string"
 	//     },
 	//     "requestId": {
-	//       "description": "begin_interface: MixerMutationRequestBuilder Request ID to support idempotency.",
+	//       "description": "An optional request ID to identify requests. Specify a unique request ID so that if you must retry your request, the server will know to ignore the request if it has already been completed.\n\nFor example, consider a situation where you make an initial request and then the request times out. If you make the request again with the same request ID, the server can check if original operation with the same request ID was received, and if so, will ignore the second request. This prevents clients from accidentally creating duplicate commitments.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -91259,10 +93539,9 @@ func (r *ZoneOperationsService) List(project string, zone string) *ZoneOperation
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -91274,7 +93553,7 @@ func (r *ZoneOperationsService) List(project string, zone string) *ZoneOperation
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -91431,7 +93710,7 @@ func (c *ZoneOperationsListCall) Do(opts ...googleapi.CallOption) (*OperationLis
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -91675,10 +93954,9 @@ func (r *ZonesService) List(project string) *ZonesListCall {
 	return c
 }
 
-// Filter sets the optional parameter "filter": Sets a filter expression
-// for filtering listed resources, in the form filter={expression}. Your
-// {expression} must be in the format: field_name comparison_string
-// literal_string.
+// Filter sets the optional parameter "filter": Sets a filter
+// {expression} for filtering listed resources. Your {expression} must
+// be in the format: field_name comparison_string literal_string.
 //
 // The field_name is the name of the field you want to compare. Only
 // atomic field types are supported (string, number, boolean). The
@@ -91690,7 +93968,7 @@ func (r *ZonesService) List(project string) *ZonesListCall {
 // match the entire field.
 //
 // For example, to filter for instances that do not have a name of
-// example-instance, you would use filter=name ne example-instance.
+// example-instance, you would use name ne example-instance.
 //
 // You can filter on nested fields. For example, you could filter on
 // instances that have set the scheduling.automaticRestart field to
@@ -91845,7 +94123,7 @@ func (c *ZonesListCall) Do(opts ...googleapi.CallOption) (*ZoneList, error) {
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Sets a filter expression for filtering listed resources, in the form filter={expression}. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use filter=name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
+	//       "description": "Sets a filter {expression} for filtering listed resources. Your {expression} must be in the format: field_name comparison_string literal_string.\n\nThe field_name is the name of the field you want to compare. Only atomic field types are supported (string, number, boolean). The comparison_string must be either eq (equals) or ne (not equals). The literal_string is the string value to filter to. The literal value must be valid for the type of field you are filtering by (string, number, boolean). For string fields, the literal value is interpreted as a regular expression using RE2 syntax. The literal value must match the entire field.\n\nFor example, to filter for instances that do not have a name of example-instance, you would use name ne example-instance.\n\nYou can filter on nested fields. For example, you could filter on instances that have set the scheduling.automaticRestart field to true. Use filtering on nested fields to take advantage of labels to organize and search for results based on label values.\n\nTo filter on multiple expressions, provide each separate expression within parentheses. For example, (scheduling.automaticRestart eq true) (zone eq us-central1-f). Multiple expressions are treated as AND expressions, meaning that resources must match all expressions to pass the filters.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },

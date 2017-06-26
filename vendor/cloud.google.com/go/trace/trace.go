@@ -165,7 +165,6 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/api/support/bundler"
 	"google.golang.org/api/transport"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -239,31 +238,6 @@ func requestHook(ctx context.Context, req *http.Request) func(resp *http.Respons
 	}
 }
 
-// EnableGRPCTracingDialOption traces all outgoing requests from a gRPC client.
-// The calling context should already have a *trace.Span; a child span will be
-// created for the outgoing gRPC call. If the calling context doesn't have a span,
-// the call will not be traced.
-//
-// The functionality in gRPC that this relies on is currently experimental.
-var EnableGRPCTracingDialOption grpc.DialOption = grpc.WithUnaryInterceptor(grpc.UnaryClientInterceptor(grpcUnaryInterceptor))
-
-// EnableGRPCTracing automatically traces all gRPC calls from cloud.google.com/go clients.
-//
-// The functionality in gRPC that this relies on is currently experimental.
-var EnableGRPCTracing option.ClientOption = option.WithGRPCDialOption(EnableGRPCTracingDialOption)
-
-func grpcUnaryInterceptor(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-	// TODO: also intercept streams.
-	span := FromContext(ctx).NewChild(method)
-	err := invoker(ctx, method, req, reply, cc, opts...)
-	if err != nil {
-		// TODO: standardize gRPC label names?
-		span.SetLabel("error", err.Error())
-	}
-	span.Finish()
-	return err
-}
-
 // nextSpanID returns a new span ID.  It will never return zero.
 func nextSpanID() uint64 {
 	var id uint64
@@ -315,7 +289,7 @@ func NewClient(ctx context.Context, projectID string, opts ...option.ClientOptio
 		traces := bundle.([]*api.Trace)
 		err := c.upload(traces)
 		if err != nil {
-			log.Printf("failed to upload %d traces to the Cloud Trace server.", len(traces))
+			log.Printf("failed to upload %d traces to the Cloud Trace server: %v", len(traces), err)
 		}
 	})
 	bundler.DelayThreshold = 2 * time.Second
@@ -361,7 +335,7 @@ func (c *Client) SpanFromHeader(name string, header string) *Span {
 	if c == nil {
 		return nil
 	}
-	traceID, parentSpanID, options, ok := traceInfoFromHeader(header)
+	traceID, parentSpanID, options, _, ok := traceInfoFromHeader(header)
 	if !ok {
 		traceID = nextTraceID()
 	}
@@ -399,7 +373,7 @@ func (c *Client) SpanFromRequest(r *http.Request) *Span {
 	if c == nil {
 		return nil
 	}
-	traceID, parentSpanID, options, ok := traceInfoFromHeader(r.Header.Get(httpHeader))
+	traceID, parentSpanID, options, _, ok := traceInfoFromHeader(r.Header.Get(httpHeader))
 	if !ok {
 		traceID = nextTraceID()
 	}
@@ -431,7 +405,7 @@ func (c *Client) NewSpan(name string) *Span {
 		globalOptions: optionTrace,
 	}
 	span := startNewChild(name, t, 0)
-	span.span.Kind = spanKindServer
+	span.span.Kind = spanKindUnspecified
 	span.rootSpan = true
 	configureSpanFromPolicy(span, c.policy, false)
 	return span
@@ -472,42 +446,47 @@ func FromContext(ctx context.Context) *Span {
 	return s
 }
 
-func traceInfoFromHeader(h string) (string, uint64, optionFlags, bool) {
+func traceInfoFromHeader(h string) (traceID string, spanID uint64, options optionFlags, optionsOk bool, ok bool) {
 	// See https://cloud.google.com/trace/docs/faq for the header format.
 	// Return if the header is empty or missing, or if the header is unreasonably
 	// large, to avoid making unnecessary copies of a large string.
 	if h == "" || len(h) > 200 {
-		return "", 0, 0, false
+		return "", 0, 0, false, false
+
 	}
 
 	// Parse the trace id field.
 	slash := strings.Index(h, `/`)
 	if slash == -1 {
-		return "", 0, 0, false
+		return "", 0, 0, false, false
+
 	}
-	traceID, h := h[:slash], h[slash+1:]
+	traceID, h = h[:slash], h[slash+1:]
 
 	// Parse the span id field.
+	spanstr := h
 	semicolon := strings.Index(h, `;`)
-	if semicolon == -1 {
-		return "", 0, 0, false
+	if semicolon != -1 {
+		spanstr, h = h[:semicolon], h[semicolon+1:]
 	}
-	spanstr, h := h[:semicolon], h[semicolon+1:]
 	spanID, err := strconv.ParseUint(spanstr, 10, 64)
 	if err != nil {
-		return "", 0, 0, false
+		return "", 0, 0, false, false
+
 	}
 
-	// Parse the options field.
+	// Parse the options field, options field is optional.
 	if !strings.HasPrefix(h, "o=") {
-		return "", 0, 0, false
+		return traceID, spanID, 0, false, true
+
 	}
 	o, err := strconv.ParseUint(h[2:], 10, 64)
 	if err != nil {
-		return "", 0, 0, false
+		return "", 0, 0, false, false
+
 	}
-	options := optionFlags(o)
-	return traceID, spanID, options, true
+	options = optionFlags(o)
+	return traceID, spanID, options, true, true
 }
 
 type optionFlags uint32
@@ -586,8 +565,11 @@ func (c *Client) upload(traces []*api.Trace) error {
 
 // Span contains information about one span of a trace.
 type Span struct {
-	trace      *trace
-	span       api.TraceSpan
+	trace *trace
+
+	spanMu sync.Mutex // guards span.Labels
+	span   api.TraceSpan
+
 	start      time.Time
 	end        time.Time
 	rootSpan   bool
@@ -642,6 +624,20 @@ func (s *Span) NewRemoteChild(r *http.Request) *Span {
 	return newSpan
 }
 
+// Header returns the value of the X-Cloud-Trace-Context header that
+// should be used to propagate the span.  This is the inverse of
+// SpanFromHeader.
+//
+// Most users should use NewRemoteChild unless they have specific
+// propagation needs or want to control the naming of their span.
+// Header() does not create a new span.
+func (s *Span) Header() string {
+	if s == nil {
+		return ""
+	}
+	return spanHeader(s.trace.traceID, s.span.SpanId, s.trace.globalOptions)
+}
+
 func startNewChildWithRequest(r *http.Request, trace *trace, parentSpanID uint64) *Span {
 	name := r.URL.Host + r.URL.Path // drop scheme and query params
 	newSpan := startNewChild(name, trace, parentSpanID)
@@ -689,6 +685,8 @@ func (s *Span) TraceID() string {
 // If a label is given a value automatically and by SetLabel, the
 // automatically-set value is used.
 // If s is nil, does nothing.
+//
+// SetLabel shouldn't be called after Finish or FinishWait.
 func (s *Span) SetLabel(key, value string) {
 	if s == nil {
 		return
@@ -696,6 +694,9 @@ func (s *Span) SetLabel(key, value string) {
 	if !s.tracing() {
 		return
 	}
+	s.spanMu.Lock()
+	defer s.spanMu.Unlock()
+
 	if value == "" {
 		if s.span.Labels != nil {
 			delete(s.span.Labels, key)
