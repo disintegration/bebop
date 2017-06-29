@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"log"
 	"os"
 
 	"github.com/disintegration/bebop/store"
@@ -12,21 +11,21 @@ import (
 func printAdmins() {
 	cfg, err := getConfig()
 	if err != nil {
-		log.Fatalf("failed to load configuration: %s", err)
+		logger.Fatalf("failed to load configuration: %s", err)
 	}
 
 	s, err := getStore(cfg)
 	if err != nil {
-		log.Fatalf("failed to get data store: %s", err)
+		logger.Fatalf("failed to get data store: %s", err)
 	}
 
 	admins, err := s.Users().GetAdmins()
 	if err != nil {
-		log.Fatalf("failed to get the list of admins: %s", err)
+		logger.Fatalf("failed to get the list of admins: %s", err)
 	}
 
 	for i, user := range admins {
-		log.Printf("%d: %s", i+1, user.Name)
+		logger.Printf("%d: %s", i+1, user.Name)
 	}
 }
 
@@ -41,47 +40,47 @@ func removeAdmin() {
 }
 
 func setAdmin(isAdmin bool) {
-	if len(flag.Args()) < 2 {
+	username := flag.Arg(1)
+	if username == "" {
 		help()
 		os.Exit(2)
 	}
-	username := flag.Arg(1)
 
 	cfg, err := getConfig()
 	if err != nil {
-		log.Fatalf("failed to load configuration: %s", err)
+		logger.Fatalf("failed to load configuration: %s", err)
 	}
 
 	s, err := getStore(cfg)
 	if err != nil {
-		log.Fatalf("failed to get data store: %s", err)
+		logger.Fatalf("failed to get data store: %s", err)
 	}
 
 	user, err := s.Users().GetByName(username)
 	if err != nil {
 		if err == store.ErrNotFound {
-			log.Fatalf("user not found: %s", username)
+			logger.Fatalf("user not found: %s", username)
 		} else {
-			log.Fatalf("user search by username failed: %s", err)
+			logger.Fatalf("user search by username failed: %s", err)
 		}
 	}
 
 	if user.Admin == isAdmin {
 		if isAdmin {
-			log.Fatalf("user %s is already an admin", username)
+			logger.Fatalf("user %s is already an admin", username)
 		} else {
-			log.Fatalf("user %s is not an admin", username)
+			logger.Fatalf("user %s is not an admin", username)
 		}
 	}
 
 	err = s.Users().SetAdmin(user.ID, isAdmin)
 	if err != nil {
-		log.Fatalf("failed to change user admin rights: %s", err)
+		logger.Fatalf("failed to change user admin rights: %s", err)
 	}
 
 	if isAdmin {
-		log.Printf("user %s is added to admin list", username)
+		logger.Printf("user %s is added to admin list", username)
 	} else {
-		log.Printf("user %s is removed from admin list", username)
+		logger.Printf("user %s is removed from admin list", username)
 	}
 }

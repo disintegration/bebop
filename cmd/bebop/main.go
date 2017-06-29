@@ -9,10 +9,12 @@ import (
 	"os"
 )
 
-var useEnvConfig = flag.Bool("e", false, "use environment variables as config")
+var (
+	logger       = log.New(os.Stdout, "", log.LstdFlags|log.LUTC)
+	useEnvConfig = flag.Bool("e", false, "use environment variables as config")
+)
 
 func main() {
-	log.SetFlags(0)
 	flag.Usage = help
 	flag.Parse()
 

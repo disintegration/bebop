@@ -1,17 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"sort"
 
 	"github.com/pressly/chi"
 	"github.com/pressly/chi/middleware"
-
-	"encoding/json"
 
 	"github.com/disintegration/bebop/api"
 	"github.com/disintegration/bebop/avatar"
@@ -25,29 +22,27 @@ import (
 func startServer() {
 	cfg, err := getConfig()
 	if err != nil {
-		log.Fatalf("failed to load configuration: %s", err)
+		logger.Fatalf("failed to load configuration: %s", err)
 	}
-
-	logger := log.New(os.Stdout, "", log.LstdFlags|log.LUTC)
 
 	baseURL, err := url.Parse(cfg.BaseURL)
 	if err != nil {
-		log.Fatalf("failed to parse base url: %s", err)
+		logger.Fatalf("failed to parse base url: %s", err)
 	}
 
 	fileStorage, err := getFileStorage(cfg)
 	if err != nil {
-		log.Fatalf("failed to init file storage: %s", err)
+		logger.Fatalf("failed to init file storage: %s", err)
 	}
 
 	store, err := getStore(cfg)
 	if err != nil {
-		log.Fatalf("failed to init data store: %s", err)
+		logger.Fatalf("failed to init data store: %s", err)
 	}
 
 	jwtService, err := jwt.NewService(cfg.JWT.Secret)
 	if err != nil {
-		log.Fatalf("failed to create jwt service: %s", err)
+		logger.Fatalf("failed to create jwt service: %s", err)
 	}
 
 	avatarService := avatar.NewService(store.Users(), fileStorage, logger)
@@ -69,12 +64,12 @@ func startServer() {
 
 	oauthProviders, err := initOAuthProviders(cfg, oauthHandler)
 	if err != nil {
-		log.Fatalf("failed to init oauth providers: %s", err)
+		logger.Fatalf("failed to init oauth providers: %s", err)
 	}
 
 	configHandler, err := newConfigHandler(cfg.Title, oauthProviders)
 	if err != nil {
-		log.Fatalf("failed to create config handler: %s", err)
+		logger.Fatalf("failed to create config handler: %s", err)
 	}
 
 	router := chi.NewRouter()
@@ -94,10 +89,10 @@ func startServer() {
 	router.Get("/config.json", configHandler)
 	router.Get("/", static.EmbeddedFile("/frontend/app.html").ServeHTTP)
 
-	log.Printf("starting the server: %s", cfg.Address)
+	logger.Printf("starting the server: %s", cfg.Address)
 
 	if err := http.ListenAndServe(cfg.Address, http.StripPrefix(baseURL.Path, router)); err != nil {
-		log.Fatalf("listen and serve failed: %v", err)
+		logger.Fatalf("listen and serve failed: %v", err)
 	}
 }
 

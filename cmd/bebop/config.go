@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 
 	"github.com/disintegration/bebop/config"
@@ -18,19 +17,19 @@ const configFile = "bebop.conf"
 // initConfig creates an initial configuration file inside the current directory.
 func initConfig() {
 	if _, err := os.Stat(configFile); !os.IsNotExist(err) {
-		log.Fatalf("configuration file already exists: %s", configFile)
+		logger.Fatalf("configuration file already exists: %s", configFile)
 	}
 
-	log.Printf("creating initial configuration: %s", configFile)
+	logger.Printf("creating initial configuration: %s", configFile)
 
 	cfg, err := config.Init()
 	if err != nil {
-		log.Fatalf("failed to generate initial configuration: %s", err)
+		logger.Fatalf("failed to generate initial configuration: %s", err)
 	}
 
 	err = ioutil.WriteFile(configFile, []byte(cfg), 0666)
 	if err != nil {
-		log.Fatalf("failed to write configuration file: %s", err)
+		logger.Fatalf("failed to write configuration file: %s", err)
 	}
 }
 
@@ -46,7 +45,7 @@ func getConfig() (cfg *config.Config, err error) {
 
 // genKey generates a random 32-byte hex-encoded key.
 func genKey() {
-	log.Printf("key: %s", config.GenKeyHex(32))
+	logger.Printf("key: %s", config.GenKeyHex(32))
 }
 
 func getFileStorage(cfg *config.Config) (filestorage.FileStorage, error) {
