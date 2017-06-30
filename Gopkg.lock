@@ -26,6 +26,12 @@
   revision = "1a457b860450eb157f092fdc511993cfa621cc37"
 
 [[projects]]
+  name = "github.com/go-chi/chi"
+  packages = [".","middleware"]
+  revision = "967844826e58cf31213a7dfb82455d242ad85101"
+  version = "v3.0.0"
+
+[[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
   revision = "d3de07a94d22b4a0972deb4b96d790c2c0ce8333"
@@ -78,12 +84,6 @@
   name = "github.com/lib/pq"
   packages = [".","oid"]
   revision = "8837942c3e09574accbc5f150e2c5e057189cace"
-
-[[projects]]
-  name = "github.com/pressly/chi"
-  packages = [".","middleware"]
-  revision = "e6033ea75479391a4bce3918fc119cad31e1cb30"
-  version = "v2.1.0"
 
 [[projects]]
   branch = "go1"
@@ -154,6 +154,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f8160489ffc74fb3de97f3f0a8e24bd9db5fa8239fcc0c99b642a531872e6a92"
+  inputs-digest = "1775124f629a8bc4859cebda919c51d2e17d3a232cc71cff4bde21bbd92f51a5"
   solver-name = "gps-cdcl"
   solver-version = 1
