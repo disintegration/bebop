@@ -48,8 +48,8 @@ func New(config *Config) *Handler {
 	h.providers = make(map[string]*provider)
 
 	h.router = chi.NewRouter()
-	h.router.Get("/begin/:provider", h.handleBegin)
-	h.router.Get("/end/:provider", h.handleEnd)
+	h.router.Get("/begin/{provider}", h.handleBegin)
+	h.router.Get("/end/{provider}", h.handleEnd)
 
 	return h
 }
