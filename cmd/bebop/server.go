@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"sort"
 
-	"github.com/pressly/chi"
-	"github.com/pressly/chi/middleware"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 
 	"github.com/disintegration/bebop/api"
 	"github.com/disintegration/bebop/avatar"

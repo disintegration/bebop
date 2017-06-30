@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pressly/chi"
+	"github.com/go-chi/chi"
 	"github.com/satori/go.uuid"
 	"golang.org/x/oauth2"
 

@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/pressly/chi"
+	"github.com/go-chi/chi"
 
 	"github.com/disintegration/bebop/avatar"
 	"github.com/disintegration/bebop/jwt"
@@ -40,20 +40,20 @@ func New(config *Config) *Handler {
 	h.router.Get("/me", h.handleMe)
 
 	h.router.Get("/users", h.handleGetUsers)
-	h.router.Get("/users/:id", h.handleGetUser)
-	h.router.Put("/users/:id/name", h.handleSetUserName)
-	h.router.Put("/users/:id/avatar", h.handleSetUserAvatar)
-	h.router.Put("/users/:id/blocked", h.handleSetUserBlocked)
+	h.router.Get("/users/{id}", h.handleGetUser)
+	h.router.Put("/users/{id}/name", h.handleSetUserName)
+	h.router.Put("/users/{id}/avatar", h.handleSetUserAvatar)
+	h.router.Put("/users/{id}/blocked", h.handleSetUserBlocked)
 
 	h.router.Get("/topics", h.handleGetTopics)
 	h.router.Post("/topics", h.handleNewTopic)
-	h.router.Get("/topics/:id", h.handleGetTopic)
-	h.router.Delete("/topics/:id", h.handleDeleteTopic)
+	h.router.Get("/topics/{id}", h.handleGetTopic)
+	h.router.Delete("/topics/{id}", h.handleDeleteTopic)
 
 	h.router.Get("/comments", h.handleGetComments)
 	h.router.Post("/comments", h.handleNewComment)
-	h.router.Get("/comments/:id", h.handleGetComment)
-	h.router.Delete("/comments/:id", h.handleDeleteComment)
+	h.router.Get("/comments/{id}", h.handleGetComment)
+	h.router.Delete("/comments/{id}", h.handleDeleteComment)
 
 	return h
 }
