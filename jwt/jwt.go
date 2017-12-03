@@ -40,19 +40,16 @@ type claims struct {
 	UserID *int64 `json:"_uid"`
 }
 
-// ErrTokenNotFound means token is not found in the given HTTP request.
-var ErrTokenNotFound = errors.New("jwt: token not found")
-
 // Create creates a JWT string using the given secret key.
 func (s *service) Create(userID int64) (string, error) {
-	claims := claims{
+	c := claims{
 		StandardClaims: jwt.StandardClaims{
 			IssuedAt: time.Now().Unix(),
 		},
 		UserID: &userID,
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, c)
 
 	tokenString, err := token.SignedString(s.secret)
 	if err != nil {

@@ -213,7 +213,6 @@ func (h *Handler) handleEnd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.renderOAuthResult(w, "success:"+authToken)
-	return
 }
 
 func (h *Handler) renderOAuthResult(w http.ResponseWriter, message string) {

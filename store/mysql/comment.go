@@ -74,6 +74,9 @@ func (s *commentStore) Get(id int64) (*store.Comment, error) {
 func (s *commentStore) GetByTopic(topicID int64, offset, limit int) ([]*store.Comment, int, error) {
 	var count int
 	err := s.db.QueryRow(`select count(*) from comments where deleted=false and topic_id=?`, topicID).Scan(&count)
+	if err != nil {
+		return nil, 0, err
+	}
 
 	if limit <= 0 || offset > count {
 		return []*store.Comment{}, count, nil
