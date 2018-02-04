@@ -17,11 +17,16 @@ func TestComment(t *testing.T) {
 		t.Fatalf("failed to create a user: %s", err)
 	}
 
-	t1, err := s.Topics().New(u1, "topic1")
+	cat1, err := s.Categories().New(u1, "cat-1")
+	if err != nil {
+		t.Fatalf("failed to create a category: %s", err)
+	}
+
+	t1, err := s.Topics().New(cat1, u1, "topic1")
 	if err != nil {
 		t.Fatalf("failed to create a topic: %s", err)
 	}
-	t2, err := s.Topics().New(u2, "topic2")
+	t2, err := s.Topics().New(cat1, u2, "topic2")
 	if err != nil {
 		t.Fatalf("failed to create a topic: %s", err)
 	}

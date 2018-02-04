@@ -12,27 +12,49 @@ type topicStore struct {
 }
 
 // New creates a new topic.
-func (s *topicStore) New(authorID int64, title string) (int64, error) {
+func (s *topicStore) New(category, authorID int64, title string) (int64, error) {
 	var id int64
 	now := time.Now()
 
-	err := s.db.QueryRow(
+	tx, err := s.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+
+	err = s.db.QueryRow(
 		`
-			insert into topics(author_id, title, created_at, last_comment_at)
+			insert into topics(category_id, author_id, title, created_at, last_comment_at)
 			values($1, $2, $3, $4)
 			returning id
 		`,
-		authorID, title, now, now,
+		category, authorID, title, now, now,
 	).Scan(&id)
 
-	return id, err
+	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	_, err = tx.Exec(`update categories set last_topic_at=$1, topic_count=topic_count+1 where id=$2`, now, category)
+	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	return id, nil
 }
 
-const selectFromTopics = `select id, author_id, title, created_at, last_comment_at, comment_count from topics`
+const selectFromTopics = `select id, category_id, author_id, title, created_at, last_comment_at, comment_count from topics`
 
 func (s *topicStore) scanTopic(scanner scanner) (*store.Topic, error) {
 	t := new(store.Topic)
-	err := scanner.Scan(&t.ID, &t.AuthorID, &t.Title, &t.CreatedAt, &t.LastCommentAt, &t.CommentCount)
+	err := scanner.Scan(&t.ID, &t.CategoryID, &t.AuthorID, &t.Title, &t.CreatedAt, &t.LastCommentAt, &t.CommentCount)
 	if err == sql.ErrNoRows {
 		return nil, store.ErrNotFound
 	}
@@ -48,10 +70,10 @@ func (s *topicStore) Get(id int64) (*store.Topic, error) {
 	return s.scanTopic(row)
 }
 
-// GetLatest returns a limited number of latest topics and a total topic count.
-func (s *topicStore) GetLatest(offset, limit int) ([]*store.Topic, int, error) {
+// GetByCategory returns a limited number of latest topics and a total topic count.
+func (s *topicStore) GetByCategory(id int64, offset, limit int) ([]*store.Topic, int, error) {
 	var count int
-	err := s.db.QueryRow(`select count(*) from topics where deleted=false`).Scan(&count)
+	err := s.db.QueryRow(`select count(*) from topics where (deleted=false and category_id=$1)`, id).Scan(&count)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -61,7 +83,8 @@ func (s *topicStore) GetLatest(offset, limit int) ([]*store.Topic, int, error) {
 	}
 
 	rows, err := s.db.Query(
-		selectFromTopics+` where deleted=false order by last_comment_at desc, id desc limit $1 offset $2`,
+		selectFromTopics+` where (deleted=false and category_id=$1) order by last_comment_at desc, id desc limit $2 offset $3`,
+		id,
 		limit,
 		offset,
 	)

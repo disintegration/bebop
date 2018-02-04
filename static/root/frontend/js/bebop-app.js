@@ -14,12 +14,15 @@ var BebopApp = new Vue({
 
   router: new VueRouter({
     routes: [
-      { path: "/", component: BebopTopics },
-      { path: "/p/:page", component: BebopTopics },
+      { path: "/", component: BebopCategories },
+      { path: "/p/:page", component: BebopCategories },
+      { path: "/c/:category", component: BebopTopics },
+      { path: "/c/:category/p/:page", component: BebopTopics },
       { path: "/t/:topic", component: BebopComments },
       { path: "/t/:topic/p/:page", component: BebopComments },
       { path: "/t/:topic/p/:page/c/:comment", component: BebopComments },
-      { path: "/new-topic", component: BebopNewTopic },
+      { path: "/new-category", component: BebopNewCategory },
+      { path: "/new-topic/:category", component: BebopNewTopic },
       { path: "/new-comment/:topic", component: BebopNewComment },
       { path: "/me", component: BebopUser },
       { path: "/u/:user", component: BebopUser },

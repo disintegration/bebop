@@ -15,15 +15,21 @@ import (
 
 // Store is a postgresql implementation of store.
 type Store struct {
-	db           *sql.DB
-	userStore    *userStore
-	topicStore   *topicStore
-	commentStore *commentStore
+	db            *sql.DB
+	userStore     *userStore
+	categoryStore *categoryStore
+	topicStore    *topicStore
+	commentStore  *commentStore
 }
 
 // Users returns a user store.
 func (s *Store) Users() store.UserStore {
 	return s.userStore
+}
+
+// Categories returns a category store.
+func (s *Store) Categories() store.CategoryStore {
+	return s.categoryStore
 }
 
 // Topics returns a topic store.
@@ -60,10 +66,11 @@ func Connect(address, username, password, database, sslmode, sslrootcert string)
 	}
 
 	s := &Store{
-		db:           db,
-		userStore:    &userStore{db: db},
-		topicStore:   &topicStore{db: db},
-		commentStore: &commentStore{db: db},
+		db:            db,
+		userStore:     &userStore{db: db},
+		categoryStore: &categoryStore{db: db},
+		topicStore:    &topicStore{db: db},
+		commentStore:  &commentStore{db: db},
 	}
 
 	err = s.Migrate()
