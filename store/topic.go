@@ -8,6 +8,7 @@ import (
 // Topic is a discussion topic.
 type Topic struct {
 	ID            int64     `json:"id"`
+	CategoryID    int64     `json:"categoryId"`
 	AuthorID      int64     `json:"authorId"`
 	Title         string    `json:"title"`
 	CreatedAt     time.Time `json:"createdAt"`

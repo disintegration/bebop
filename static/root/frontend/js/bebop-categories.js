@@ -1,13 +1,13 @@
-const TOPICS_PER_PAGE = 20;
+const CATEGORIES_PER_PAGE = 20;
 
-var BebopTopics = Vue.component("bebop-topics", {
+var BebopCategories = Vue.component("bebop-categories", {
   template: `
     <div class="container content-container">
 
       <div v-if="!dataReady" class="loading-info">
         <div v-if="error" >
           <p class="text-danger">
-            Sorry, could not load topics. Please check your connection.
+            Sorry, could not load categories. Please check your connection.
           </p>
           <a class="btn btn-primary btn-sm" role="button" @click="load">
             <i class="fa fa-refresh"></i> Try Again
@@ -19,16 +19,16 @@ var BebopTopics = Vue.component("bebop-topics", {
       </div>
       <div v-else>
 
-        <div class="topics-topic-top-buttons">
-          <router-link v-if="auth.authenticated" :to="'/new-topic/' + categoryId" class="btn btn-primary btn-sm">
-            <i class="fa fa-plus"></i> New Topic
+        <div class="categories-category-top-buttons">
+          <router-link v-if="auth.authenticated && auth.user.admin" to="/new-category" class="btn btn-primary btn-sm">
+            <i class="fa fa-plus"></i> New Category
           </router-link>
           <a class="btn btn-primary btn-sm" role="button" @click="load">
             <i class="fa fa-refresh"></i> Refresh
           </a>
         </div>
 
-        <h2 class="topics-category-title">Topics in "{{category.title}}"</h2>
+        <h2 class="categories-title">Categories</h2>
 
         <nav v-if="page > 1">
           <ul class="pagination pagination-sm">
@@ -39,29 +39,20 @@ var BebopTopics = Vue.component("bebop-topics", {
           </ul>
         </nav>
 
-        <div v-for="topic in topics" class="card topics-topic">
-          <div class="avatar-block">
-            <div class="avatar-block-l">
-              <img v-if="users[topic.authorId].avatar" class="img-circle" :src="users[topic.authorId].avatar" width="40" height="40"> 
-              <img v-else class="img-circle" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" width="40" height="40"> 
-            </div>
-            <div class="avatar-block-r">
-              <div class="topics-topic-title">
-                <router-link :to="'/t/' + topic.id">{{topic.title}}</router-link>
-              </div>
-              <div class="topics-topic-info">
-                <i class="fa fa-user-o"></i> {{users[topic.authorId].name}}
+        <div v-for="category in categories" class="card categories-category">
+          <div class="categories-category-title">
+            <router-link :to="'/c/' + category.id">{{category.title}}</router-link>
+          </div>
+          <div class="categories-category-info">
                 <span class="info-separator"> | </span>
-                <i class="fa fa-comment-o"></i> {{topic.commentCount}}
+                <i class="fa fa-comment-o"></i> {{category.topicCount}}
                 <span class="info-separator"> | </span>
-                <i class="fa fa-clock-o"></i> <span :title="topic.lastCommentAt|formatTime">{{topic.lastCommentAt|formatTimeAgo}}</span>
-              </div>
-              <div class="topics-topic-admin-tools" v-if="auth.authenticated && auth.user.admin">
-                <a class="a-tool" role="button" @click="delTopic(topic.id)"><i class="fa fa-times" aria-hidden="true"></i> delete topic</a>
+                <i class="fa fa-clock-o"></i> <span :title="category.lastTopicAt|formatTime">{{category.lastTopicAt|formatTimeAgo}}</span>
+          </div>
+          <div class="categories-category-admin-tools" v-if="auth.authenticated && auth.user.admin">
+                <a class="a-tool" role="button" @click="delCategory(category.id)"><i class="fa fa-times" aria-hidden="true"></i> delete category</a>
                 <span class="info-separator"> | </span> 
-                <router-link :to="'/u/' + users[topic.authorId].id" class="a-tool"><i class="fa fa-user" aria-hidden="true"></i> user profile</router-link>
-              </div>
-            </div>
+                <router-link :to="'/u/' + users[category.authorId].id" class="a-tool"><i class="fa fa-user" aria-hidden="true"></i> user profile</router-link>
           </div>
         </div>
 
@@ -83,11 +74,9 @@ var BebopTopics = Vue.component("bebop-topics", {
 
   data: function() {
     return {
-      category: [],
-      categoryReady: false,
-      topics: [],
-      topicsReady: false,
-      topicCount: 0,
+      categories: [],
+      categoriesReady: false,
+      categoryCount: 0,
       users: {},
       usersReady: false,
       error: false,
@@ -96,16 +85,8 @@ var BebopTopics = Vue.component("bebop-topics", {
 
   computed: {
     dataReady: function() {
-      return this.categoryReady && this.topicsReady && this.usersReady;
+      return this.categoriesReady && this.usersReady;
     },
-
-    categoryId: function() {
-		var categoryId = parseInt(this.$route.params.category, 10);
-		if (!categoryId) {
-			return 0;
-		}
-		return categoryId;
-	},
 
     page: function() {
       var page = parseInt(this.$route.params.page, 10);
@@ -116,10 +97,10 @@ var BebopTopics = Vue.component("bebop-topics", {
     },
 
     lastPage: function() {
-      if (!this.topicsReady) {
+      if (!this.categoriesReady) {
         return 1;
       }
-      var p = Math.floor((this.topicCount - 1) / TOPICS_PER_PAGE) + 1;
+      var p = Math.floor((this.categoryCount - 1) / CATEGORIES_PER_PAGE) + 1;
       if (p < 1) {
         p = 1;
       }
@@ -127,7 +108,7 @@ var BebopTopics = Vue.component("bebop-topics", {
     },
 
     pagination: function() {
-      if (!this.topicsReady) {
+      if (!this.categoriesReady) {
         return [];
       }
       return getPagination(this.page, this.lastPage);
@@ -138,9 +119,6 @@ var BebopTopics = Vue.component("bebop-topics", {
     page: function(val) {
       this.load();
     },
-	categoryId: function(val) {
-	  this.load();
-	},
   },
 
   created: function() {
@@ -149,44 +127,26 @@ var BebopTopics = Vue.component("bebop-topics", {
 
   methods: {
     load: function() {
-      this.category = {};
-      this.categoryReady = false;
-      this.topics = [];
-      this.topicsReady = false;
-      this.topicCount = 0;
+      this.categories = [];
+      this.categoriesReady = false;
+      this.categoryCount = 0;
       this.users = {};
       this.usersReady = false;
       this.error = false;
-      this.getCategory();
-      this.getTopics();
+      this.getCategories();
     },
 
-    getCategory: function() {
-	  var url = "api/v1/categories/"+this.categoryId;
-      this.$http.get(url).then(
-        response => {
-          this.category = response.body.category;
-          this.categoryReady = true;
-        },
-        response => {
-          this.error = true;
-          console.log("ERROR: getCategory: " + JSON.stringify(response.body));
-        }
-      );
- 
-    },
-
-    getTopics: function() {
-      var url = "api/v1/topics?category="+this.categoryId+"&limit=" + TOPICS_PER_PAGE;
+    getCategories: function() {
+      var url = "api/v1/categories?limit=" + CATEGORIES_PER_PAGE;
       if (this.page > 1) {
-        var offset = (this.page - 1) * TOPICS_PER_PAGE;
+        var offset = (this.page - 1) * CATEGORIES_PER_PAGE;
         url += "&offset=" + offset;
       }
       this.$http.get(url).then(
         response => {
-          this.topics = response.body.topics;
-          this.topicCount = response.body.count;
-          this.topicsReady = true;
+          this.categories = response.body.categories;
+          this.categoryCount = response.body.count;
+          this.categoriesReady = true;
 
           if (this.page > this.lastPage) {
             this.$parent.$router.replace("/p/" + this.lastPage);
@@ -197,7 +157,7 @@ var BebopTopics = Vue.component("bebop-topics", {
         },
         response => {
           this.error = true;
-          console.log("ERROR: getTopics: " + JSON.stringify(response.body));
+          console.log("ERROR: getCategories: " + JSON.stringify(response.body));
         }
       );
     },
@@ -205,8 +165,8 @@ var BebopTopics = Vue.component("bebop-topics", {
     getUsers: function() {
       var url = "api/v1/users";
       var ids = [];
-      for (var i = 0; i < this.topics.length; i++) {
-        ids.push(this.topics[i].authorId);
+      for (var i = 0; i < this.categories.length; i++) {
+        ids.push(this.categories[i].authorId);
       }
       ids = ids.filter((v, i, a) => a.indexOf(v) === i);
       if (ids.length === 0) {
@@ -231,17 +191,17 @@ var BebopTopics = Vue.component("bebop-topics", {
       );
     },
 
-    delTopic: function(id) {
-      if (!confirm("Are you sure you want to delete topic " + id + "?")) {
+    delCategory: function(id) {
+      if (!confirm("Are you sure you want to delete category " + id + "?")) {
         return;
       }
-      var url = "api/v1/topics/" + id;
+      var url = "api/v1/categories/" + id;
       this.$http.delete(url).then(
         response => {
           this.load();
         },
         response => {
-          console.log("ERROR: delTopic: " + JSON.stringify(response.body));
+          console.log("ERROR: delCategory: " + JSON.stringify(response.body));
         }
       );
     },

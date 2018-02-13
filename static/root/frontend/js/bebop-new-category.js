@@ -1,23 +1,19 @@
-var BebopNewTopic = Vue.component("bebop-new-topic", {
+var BebopNewCategory = Vue.component("bebop-new-category", {
   template: `
     <div class="container content-container">
-      <h2>New Topic</h2>
+      <h2>New Category</h2>
       <div>
         <div class="form-group">
           <label for="user-name" class="form-control-label">Title:</label>
-          <input type="text" class="form-control" id="topic-title-input" @change="hideErrorMessage" @keyup="hideErrorMessage" maxlength="100">
-        </div>
-        <div class="form-group">
-          <label for="user-name" class="form-control-label">Comment:</label>
-          <textarea class="form-control" id="comment-input" @change="hideErrorMessage" @keyup="hideErrorMessage" maxlength="10000"></textarea>
+          <input type="text" class="form-control" id="category-title-input" @change="hideErrorMessage" @keyup="hideErrorMessage" maxlength="100">
         </div>
         <div id="form-error" class="alert alert-danger" :class="{hidden: errorMessage===''}" role="alert" style="cursor:pointer" @click="hideErrorMessage">
           {{errorMessage}}
         </div>
       </div>
       <div>
-        <button type="button" class="btn btn-primary btn-sm" @click="postTopic" :disabled="posting">
-          <i class="fa fa-plus"></i> Create Topic
+        <button type="button" class="btn btn-primary btn-sm" @click="postCategory" :disabled="posting">
+          <i class="fa fa-plus"></i> Create Category
         </button>
       </div>
     </div>
@@ -42,34 +38,26 @@ var BebopNewTopic = Vue.component("bebop-new-topic", {
   },
 
   methods: {
-    postTopic: function() {
-      var categoryId = parseInt(this.$route.params.category, 10);
-      var title = $("#topic-title-input").val().trim();
+    postCategory: function() {
+      var title = $("#category-title-input").val().trim();
       if (title.length < 1 || title.length > 100) {
-        this.showErrorMessage("Invalid topic title");
-        return;
-      }
-      var comment = $("#comment-input").val().trim();
-      if (comment.length < 1 || comment.length > 10000) {
-        this.showErrorMessage("Invalid comment");
+        this.showErrorMessage("Invalid category title");
         return;
       }
       this.posting = true;
       this.$http
-        .post("api/v1/topics", {
-          category: categoryId,
+        .post("api/v1/categories", {
           title: title,
-          content: comment,
         })
         .then(
           response => {
             this.posting = false;
-            this.$parent.$router.push("/t/" + response.data.id);
+            this.$parent.$router.push("/c/" + response.data.id);
           },
           response => {
             this.posting = false;
             this.showErrorMessage("An error occured");
-            console.log("ERROR: postTopic: " + JSON.stringify(response.body));
+            console.log("ERROR: postCategory: " + JSON.stringify(response.body));
           }
         );
     },
@@ -83,3 +71,4 @@ var BebopNewTopic = Vue.component("bebop-new-topic", {
     },
   },
 });
+

@@ -20,24 +20,29 @@ func TestTopic(t *testing.T) {
 		t.Fatalf("failed to create a user: %s", err)
 	}
 
-	id1, err := s.Topics().New(u1, "topic1")
+	cat1, err := s.Categories().New(u1, "cat-1")
+	if err != nil {
+		t.Fatalf("failed to create a category: %s", err)
+	}
+
+	id1, err := s.Topics().New(cat1, u1, "topic1")
 	if err != nil {
 		t.Fatalf("failed to create a topic: %s", err)
 	}
-	id2, err := s.Topics().New(u2, "topic2")
+	id2, err := s.Topics().New(cat1, u2, "topic2")
 	if err != nil {
 		t.Fatalf("failed to create a topic: %s", err)
 	}
-	id3, err := s.Topics().New(u1, "topic3")
+	id3, err := s.Topics().New(cat1, u1, "topic3")
 	if err != nil {
 		t.Fatalf("failed to create a topic: %s", err)
 	}
-	id4, err := s.Topics().New(u2, "topic4 日本 Доброе утро")
+	id4, err := s.Topics().New(cat1, u2, "topic4 日本 Доброе утро")
 	if err != nil {
 		t.Fatalf("failed to create a topic: %s", err)
 	}
 
-	topics, c, err := s.Topics().GetLatest(0, 10)
+	topics, c, err := s.Topics().GetByCategory(cat1, 0, 10)
 	if err != nil {
 		t.Fatalf("failed to get latest topics: %s", err)
 	}
@@ -56,7 +61,7 @@ func TestTopic(t *testing.T) {
 		}
 	}
 
-	topics, c, err = s.Topics().GetLatest(0, 2)
+	topics, c, err = s.Topics().GetByCategory(cat1, 0, 2)
 	if err != nil {
 		t.Fatalf("failed to get all topics: %s", err)
 	}
@@ -76,6 +81,7 @@ func TestTopic(t *testing.T) {
 
 	want := &store.Topic{
 		ID:            id3,
+		CategoryID:    cat1,
 		AuthorID:      u1,
 		Title:         "topic3",
 		CreatedAt:     got.CreatedAt,
@@ -97,6 +103,7 @@ func TestTopic(t *testing.T) {
 
 	want = &store.Topic{
 		ID:            id3,
+		CategoryID:    cat1,
 		AuthorID:      u1,
 		Title:         "new title",
 		CreatedAt:     got.CreatedAt,

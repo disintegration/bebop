@@ -15,6 +15,7 @@ var (
 // Store is a bebop data store interface.
 type Store interface {
 	Users() UserStore
+	Categories() CategoryStore
 	Topics() TopicStore
 	Comments() CommentStore
 }
@@ -33,11 +34,20 @@ type UserStore interface {
 	SetAvatar(id int64, avatar string) error
 }
 
+// CategoryStore is a bebop category data store interface.
+type CategoryStore interface {
+	New(authorID int64, title string) (int64, error)
+	Get(id int64) (*Category, error)
+	GetLatest(offset, limit int) ([]*Category, int, error)
+	SetTitle(id int64, title string) error
+	Delete(id int64) error
+}
+
 // TopicStore is a bebop topic data store interface.
 type TopicStore interface {
-	New(authorID int64, title string) (int64, error)
+	New(categoryID, authorID int64, title string) (int64, error)
 	Get(id int64) (*Topic, error)
-	GetLatest(offset, limit int) ([]*Topic, int, error)
+	GetByCategory(id int64, offset, limit int) ([]*Topic, int, error)
 	SetTitle(id int64, title string) error
 	Delete(id int64) error
 }
