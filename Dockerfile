@@ -1,5 +1,5 @@
 FROM golang:alpine as builder
-RUN	apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates
 WORKDIR /go/src/github.com/disintegration/bebop
 COPY . .
 RUN go generate ./static
